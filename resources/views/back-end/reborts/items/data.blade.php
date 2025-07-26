@@ -1,0 +1,300 @@
+<div class="table-responsive" wire:ignore.self>
+
+    <div class="card-header bg-light border-bottom">
+        <form class="form form-horizontal {{ !empty($data) && !empty($data[0]->name) ? 'd-none' : '' }}" wire:submit.prevent='submit'>
+            <div class="modal-body">
+                <div class="row align-items-end">
+
+
+                     {{-- نوع الجرد --}}
+                    <div class="col-md-3 mb-3">
+                        <div class="form-group">
+                            <label class="font-weight-bold">نوع الجرد</label>
+                            <select wire:model="rebort_type" wire:loading.attr="disabled" class="form-control"
+                                wire:target="rebort_type" wire:change="rebortTypeChange($event.target.value)">
+                                <option value="">اختار نوع الجرد</option>
+                                <option value="0">نوع الصنف</option>
+                                <option value="1">فئة الصنف</option>
+                                <option value="2">اسم الصنف</option>
+
+                            </select>
+                            @include('backEnd.error', ['property' => 'rebort_type'])
+                        </div>
+                    </div>
+
+                    {{-- نوع الصنف --}}
+                    <div class="col-md-3 mb-3 {{ $rebort_type == '0' ? '' : 'd-none' }}">
+                        <div class="form-group ">
+                            <label class="font-weight-bold">نوع الصنف</label>
+                            <select wire:model="item_type" wire:loading.attr="disabled" class="form-control"
+                                wire:target="item_type">
+                                <option value="">اختار نوع الصنف</option>
+                                <option value="0">مخزني</option>
+                                <option value="1">استهلاكي</option>
+                                <option value="2">عهدة</option>
+
+                            </select>
+                            @include('backEnd.error', ['property' => 'item_type'])
+                        </div>
+                    </div>
+
+
+                    {{-- فئة الصنف --}}
+                    <div class="col-md-3 mb-3 {{ $rebort_type == '1' ? '' : 'd-none' }}">
+                        <div class="form-group ">
+                            <label class="font-weight-bold">فئة الصنف</label>
+                            <select wire:model="item_category_id" wire:loading.attr="disabled" class="form-control"
+                                wire:target="item_category_id">
+                                <option value="">اختار فئة الصنف</option>
+                                @if (!empty($item_categories))
+                                    @foreach ($item_categories as $category)
+                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                            @include('backEnd.error', ['property' => 'item_category_id'])
+                        </div>
+                    </div>
+
+
+                    {{-- اسم الصنف --}}
+                    <div class="col-md-3 mb-3 {{ $rebort_type == '2' ? '' : 'd-none' }}">
+                        <div class="form-group">
+                            <label class="font-weight-bold">اسم الصنف</label>
+                            <select wire:model="item_name" wire:loading.attr="disabled" class="form-control"
+                                wire:target="item_name">
+                                <option value="">اختار اسم الصنف</option>
+                                @if (!empty($items))
+                                    @foreach ($items as $item)
+                                        <option value="{{ $item->item_code }}">{{ $item->name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                            @include('backEnd.error', ['property' => 'item_name'])
+                        </div>
+                    </div>
+
+
+
+                    {{-- تاريخ البداية --}}
+                    <div class="col-md-3 mb-3">
+                        <div class="form-group">
+                            <label class="font-weight-bold">تاريخ البداية</label>
+                            <input type="date" class="form-control" wire:model="start_date">
+                            @include('backEnd.error', ['property' => 'start_date'])
+                        </div>
+                    </div>
+
+
+
+                    {{-- تاريخ النهاية --}}
+                    <div class="col-md-3 mb-3">
+                        <div class="form-group">
+                            <label class="font-weight-bold">تاريخ النهاية</label>
+                            <input type="date" class="form-control" wire:model="end_date">
+                            @include('backEnd.error', ['property' => 'end_date'])
+                        </div>
+                    </div>
+
+
+
+                    {{-- ترتيب الاصناف --}}
+                    <div class="col-md-3 mb-3 {{ $rebort_type == '0' || $rebort_type == '1' ? '' : 'd-none' }}">
+                        <div class="form-group">
+                            <label class="font-weight-bold">ترتيب الاصناف حسب</label>
+                            <select wire:model="item_sort" wire:loading.attr="disabled" class="form-control"
+                                wire:target="item_sort">
+                                <option value="">اختار ترتيب الاصناف حسب</option>
+                                <option value="0">الكميات الاقل</option>
+                                <option value="1">الكميات الاكثر </option>
+                                <option value="2">تاريخ الانتهاء الاقرب</option>
+                                <option value="3">تاريخ الانتهاء الابعد</option>
+                                <option value="4">الاكثر مبيعا</option>
+
+                            </select>
+                            @include('backEnd.error', ['property' => 'item_sort'])
+                        </div>
+                    </div>
+
+
+                    {{-- زر البحث --}}
+                    <div class="col-md-2 d-flex align-items-end mb-4">
+                        <button type="submit" class="btn btn-success btn-block">
+                            <i class="fa fa-search mr-1"></i> بحث
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </form>
+    </div>
+
+
+
+    <!-- Nav pills -->
+    <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="pills-home-tab" data-toggle="pill" href="#pills-home" role="tab"
+                aria-controls="pills-home" aria-selected="true">جرد الصنف</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="pills-profile-tab" data-toggle="pill" href="#pills-profile" role="tab"
+                aria-controls="pills-profile" aria-selected="false">الفواتير</a>
+        </li>
+    </ul>
+
+    <!-- الرصيد -->
+    @if (!empty($customer))
+        <h4 class="text-center mb-4">
+            الرصيد الحالي للعميل:
+            <strong class="{{ $customer->current_balance < 0 ? 'text-danger' : 'text-success' }}">
+                {{ $customer->current_balance }}
+            </strong>
+        </h4>
+    @endif
+
+    <!-- Tab content -->
+    <div class="tab-content" id="pills-tabContent">
+
+        {{-- جرد الصنف --}}
+        <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
+            @if (!empty($data) && !empty($data[0]->name))
+                <div class="text-center mb-3">
+                    @if ($rebort_type == '0')
+                        <h5 class="text-primary">جرد حسب نوع الصنف: <strong>{{ $item_type }}</strong></h5>
+                    @elseif ($rebort_type == '1')
+                        <h5 class="text-primary">جرد حسب فئة الصنف: <strong>{{ $data[0]->name }}</strong></h5>
+                    @else
+                        <h5 class="text-primary">جرد الصنف: <strong>{{ $data[0]->name }}</strong></h5>
+                    @endif
+                    @if ($start_date != '')
+                        <p class="text-muted">الفترة من <span class="text-info">{{ $start_date }}</span> إلى <span
+                                class="text-info">{{ $end_date }}</span></p>
+                    @else
+                        <p class="text-muted">(كل الحركات الصنف )</p>
+                    @endif
+                </div>
+            @endif
+
+            <table class="table table-bordered table-striped">
+                <thead class="bg-info">
+                    <tr>
+                        <th>رقم الحركة</th>
+                        <th>نوع الحركة</th>
+                        <th>اسم الحركة</th>
+                        <th>اسم المخزن</th>
+                        <th>رصيد قبل</th>
+                        <th>الكمية</th>
+                        <th>رصيد بعد</th>
+                        <th>تاريخ</th>
+                        <th>بواسطة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!empty($data))
+                        @foreach ($data as $item)
+                            @foreach ($item->item_card_movements as $movement)
+                                <tr>
+                                    <td>{{ $movement->id }}</td>
+                                    <td>{{ $movement->itemMovementType->name }}</td>
+                                    <td>{{ $movement->itemMovementCategory->name }}</td>
+                                    <td>{{ $movement->item->name }}</td>
+                                    <td>{{ $movement->qty_before_movement }} {{ $movement->item->itemUnit->name }}
+                                    </td>
+                                    @php
+                                        $diff = $movement->qty_after_movement - $movement->qty_before_movement;
+                                    @endphp
+
+                                    <td class="{{ $diff > 0 ? 'text-success' : ($diff < 0 ? 'text-danger' : '') }}">
+                                        {{ $diff }} {{ $movement->item->itemUnit->name }}
+                                    </td>
+                                    <td>{{ $movement->qty_after_movement }} {{ $movement->item->itemUnit->name }}</td>
+
+                                    <td>{{ $item->created_at }}</td>
+                                    <td>{{ $item->adminCreate->name }}</td>
+                                </tr>
+                            @endforeach
+                        @endforeach
+                    @else
+                        <tr>
+                            <td colspan="8" class="text-center text-danger">لا يوجد بيانات</td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+
+        {{-- الفواتير --}}
+        <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">
+            @if (!empty($data_invoices) && !empty($customer))
+                <div class="text-center mb-3">
+                    <h5 class="text-primary">فواتير المشتريات من الصنف: <strong>{{ $customer->name }}</strong></h5>
+                    @if ($start_date != '')
+                        <p class="text-muted">الفترة من <span class="text-info">{{ $start_date }}</span> إلى <span
+                                class="text-info">{{ $end_date }}</span></p>
+                    @else
+                        <p class="text-muted">(كل الحركات الصنف )</p>
+                    @endif
+                </div>
+            @endif
+
+            <table class="table table-bordered table-striped">
+                <thead class="bg-info">
+                    <tr>
+                        <th>#</th>
+                        <th>رقم الفاتورة</th>
+                        <th>نوع الفاتورة</th>
+                        <th>حالة الفاتورة</th>
+                        <th>تاريخ</th>
+                        <th>الإجمالي قبل الخصم</th>
+                        <th>الإجمالي</th>
+                        <th>المدفوع</th>
+                        <th>المتبقي</th>
+                        <th>بواسطة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!empty($data_invoices) && !empty($customer))
+                        @php $x = 1; @endphp
+                        @foreach ($data_invoices as $item)
+                            <tr>
+                                <td>{{ $x++ }}</td>
+                                <td>{{ $item->auto_serial }}</td>
+                                <td>{{ $item->InvoiceType() }}</td>
+                                <td>مبيعات</td>
+                                <td>{{ $item->order_date }}</td>
+                                <td>{{ $item->total_cost_before_all }}</td>
+                                <td>{{ $item->total_cost }}</td>
+                                <td>{{ $item->paid * -1 }}</td>
+                                <td>{{ $item->unpaid }}</td>
+                                <td>{{ $item->adminCreate->name }}</td>
+                                <td>
+                                    @can('تفاصيل فاتورة المبيعات')
+                                        <a class="btn btn-warning waves-effect waves-float waves-light" title="Show"
+                                            wire:navigate href="{{ route('salesOrder.show', $item->auto_serial) }}">
+                                            المزيد
+                                        </a>
+                                    @endcan
+                                </td>
+                            </tr>
+                        @endforeach
+                    @else
+                        <tr>
+                            <td colspan="11" class="text-center text-danger">لا يوجد بيانات</td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+
+
+
+
+    <div class=" mt-2">
+        {{-- {{ $data->links() }} --}}
+    </div>
+</div>
