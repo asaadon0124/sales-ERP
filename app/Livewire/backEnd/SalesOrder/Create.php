@@ -1563,74 +1563,74 @@ class Create extends Component
 
 
 
-                    // 2 - CREATE SALES ORDER DETAILES  انشاء جدول تفاصيل فاتورة المبيعات
-                        $this->new_order_detailes                                               = new SalesOrderDetail();
-                        $this->new_order_detailes->sales_item_type_detailes                     = $item_data['sales_item_type_detailes'];
-                        $this->new_order_detailes->item_type                                    = $item_data['item_type'];
-                        $this->new_order_detailes->auto_serial_sales_order                      = $this->new_order->auto_serial;
-                        $this->new_order_detailes->item_code                                    = $item_data['item_code'];
-                        $this->new_order_detailes->item_units_id                                = $item_data['item_units_id'];
-                        $this->new_order_detailes->batch_id                                     = $batch->auto_serial;
-                        $this->new_order_detailes->store_id                                     = $item_data['store_id'];
-                        $this->new_order_detailes->is_master                                    = $item_data['is_master'];
-                        $this->new_order_detailes->is_bouns                                     = $item_data['is_bouns'];
-                        $this->new_order_detailes->qty                                          = $item_data['qty'];
-                        $this->new_order_detailes->unit_price                                   = $item_data['unit_price'];
-                        $this->new_order_detailes->total                                        = $item_data['qty'] * $item_data['unit_price'];
-                        $this->new_order_detailes->order_date                                   = $this->order_date;
-                        $this->new_order_detailes->production_date                              = $batch->production_date;
-                        $this->new_order_detailes->expire_date                                  = $batch->expire_date;
-                        $this->new_order_detailes->company_code                                 = auth()->user()->company_code;
-                        $this->new_order_detailes->created_by                                   = auth()->user()->id;
-                        $this->new_order_detailes->updated_by                                   = auth()->user()->id;
-                        $this->new_order_detailes->save();
-                        //  dd($item_data['qty']);
-                        // dd($this->new_order_detailes->qty);
+                            // 2 - CREATE SALES ORDER DETAILES  انشاء جدول تفاصيل فاتورة المبيعات
+                                $this->new_order_detailes                                               = new SalesOrderDetail();
+                                $this->new_order_detailes->sales_item_type_detailes                     = $item_data['sales_item_type_detailes'];
+                                $this->new_order_detailes->item_type                                    = $item_data['item_type'];
+                                $this->new_order_detailes->auto_serial_sales_order                      = $this->new_order->auto_serial;
+                                $this->new_order_detailes->item_code                                    = $item_data['item_code'];
+                                $this->new_order_detailes->item_units_id                                = $item_data['item_units_id'];
+                                $this->new_order_detailes->batch_id                                     = $batch->auto_serial;
+                                $this->new_order_detailes->store_id                                     = $item_data['store_id'];
+                                $this->new_order_detailes->is_master                                    = $item_data['is_master'];
+                                $this->new_order_detailes->is_bouns                                     = $item_data['is_bouns'];
+                                $this->new_order_detailes->qty                                          = $item_data['qty'];
+                                $this->new_order_detailes->unit_price                                   = $item_data['unit_price'];
+                                $this->new_order_detailes->total                                        = $item_data['qty'] * $item_data['unit_price'];
+                                $this->new_order_detailes->order_date                                   = $this->order_date;
+                                $this->new_order_detailes->production_date                              = $batch->production_date;
+                                $this->new_order_detailes->expire_date                                  = $batch->expire_date;
+                                $this->new_order_detailes->company_code                                 = auth()->user()->company_code;
+                                $this->new_order_detailes->created_by                                   = auth()->user()->id;
+                                $this->new_order_detailes->updated_by                                   = auth()->user()->id;
+                                $this->new_order_detailes->save();
+                                //  dd($item_data['qty']);
+                                // dd($this->new_order_detailes->qty);
 
-                        // ❖ نحسب الكمية بعد الإضافة
-                            $qty_after_all_stores = ItemBatch::where('item_code', $this->new_order_detailes->item_code)->selectRaw('SUM(qty - deduction) as total')->value('total');
-                            // dd($qty_after_all_stores);
-                            $qty_after_this_store = ItemBatch::where('item_code', $this->new_order_detailes->item_code)
-                                ->where('store_id', $this->new_order_detailes->store_id)
-                                ->selectRaw('SUM(qty - deduction) as total')->value('total');
+                                // ❖ نحسب الكمية بعد الإضافة
+                                    $qty_after_all_stores = ItemBatch::where('item_code', $this->new_order_detailes->item_code)->selectRaw('SUM(qty - deduction) as total')->value('total');
+                                    // dd($qty_after_all_stores);
+                                    $qty_after_this_store = ItemBatch::where('item_code', $this->new_order_detailes->item_code)
+                                        ->where('store_id', $this->new_order_detailes->store_id)
+                                        ->selectRaw('SUM(qty - deduction) as total')->value('total');
 
-                    // 3 - CREATE ITEM CARD MOVEMENTS  انشاء جدول حركة الصنف
+                            // 3 - CREATE ITEM CARD MOVEMENTS  انشاء جدول حركة الصنف
+                                $this->new_item_card_movements                                  = new ItemCardMovement();
 
-
-                        $this->new_item_card_movements                                  = new ItemCardMovement();
-
-                        $this->new_item_card_movements->store_id                        = $item_data['store_id'];
-                        $this->new_item_card_movements->item_code                       = $item_data['item_code'];
-                        $this->new_item_card_movements->item_card_movements_category_id = $this->itemCardMoveCategory->id;
-                        $this->new_item_card_movements->item_card_movements_type_id     = $this->itemCardMoveType->id;
-                        $this->new_item_card_movements->sales_order_id                  = $this->new_order->auto_serial;
-                        $this->new_item_card_movements->sales_orderdetiles__id          = $this->new_order_detailes->id;
-                        $this->new_item_card_movements->qty_before_movement             = $qty_before_all_stores;
-                        $this->new_item_card_movements->qty_before_movement_in_store    = $qty_before_this_store;
-                        $this->new_item_card_movements->qty_after_movement              = $qty_after_all_stores;
-                        $this->new_item_card_movements->qty_after_movement_in_store     = $qty_after_this_store;
-                        $this->new_item_card_movements->notes                           = $this->notes;
-                        $this->new_item_card_movements->company_code                    = auth()->user()->company_code;
-                        $this->new_item_card_movements->created_by                      = auth()->user()->id;
-                        $this->new_item_card_movements->updated_by                      = auth()->user()->id;
-                        $this->new_item_card_movements->save();
-
-
-                    // 4 -- UPDATE ITEMS TABLE تعديل جدول الخاص الاصناف  *******************************
-
-                        $get_item2                      = Item::where('item_code', $batch->item_code)->with('itemUnit')->first();
-                        $qty_after_all_stores_parent    = ItemBatch::where('item_code', $batch->item_code)->selectRaw('SUM(qty - deduction) as total')->value('total');
-                        $qty_after_all_stores_sub       = $qty_after_all_stores_parent * $get_item2->qty_sub_item_unit;
-                        $qty_fraction_only              = $qty_after_all_stores_parent - floor($qty_after_all_stores_parent); // نسبة الكسر في الوحدة الرئيسية
-                        $qty_value_fraction_only        = $qty_fraction_only * $get_item2->qty_sub_item_unit;
-
-                        // dd($qty_after_all_stores_sub);
+                                $this->new_item_card_movements->store_id                        = $item_data['store_id'];
+                                $this->new_item_card_movements->item_code                       = $item_data['item_code'];
+                                $this->new_item_card_movements->item_card_movements_category_id = $this->itemCardMoveCategory->id;
+                                $this->new_item_card_movements->item_card_movements_type_id     = $this->itemCardMoveType->id;
+                                $this->new_item_card_movements->sales_order_id                  = $this->new_order->auto_serial;
+                                $this->new_item_card_movements->sales_orderdetiles__id          = $batch->auto_serial;
+                                $this->new_item_card_movements->item_batch_id                   = $batch->auto_serial;
+                                $this->new_item_card_movements->qty_before_movement             = $qty_before_all_stores;
+                                $this->new_item_card_movements->qty_before_movement_in_store    = $qty_before_this_store;
+                                $this->new_item_card_movements->qty_after_movement              = $qty_after_all_stores;
+                                $this->new_item_card_movements->qty_after_movement_in_store     = $qty_after_this_store;
+                                $this->new_item_card_movements->notes                           = $this->notes;
+                                $this->new_item_card_movements->date                            = Carbon::now();
+                                $this->new_item_card_movements->company_code                    = auth()->user()->company_code;
+                                $this->new_item_card_movements->created_by                      = auth()->user()->id;
+                                $this->new_item_card_movements->updated_by                      = auth()->user()->id;
+                                $this->new_item_card_movements->save();
 
 
-                        $get_item2->total_qty_for_parent    = floor($qty_after_all_stores_parent);
-                        $get_item2->total_qty_for_sub_items = $qty_after_all_stores_sub;
-                        $get_item2->sub_item_qty            = $qty_value_fraction_only;
-                        $get_item2->save();
+                            // 4 -- UPDATE ITEMS TABLE تعديل جدول الخاص الاصناف  *******************************
+
+                                $get_item2                      = Item::where('item_code', $batch->item_code)->with('itemUnit')->first();
+                                $qty_after_all_stores_parent    = ItemBatch::where('item_code', $batch->item_code)->selectRaw('SUM(qty - deduction) as total')->value('total');
+                                $qty_after_all_stores_sub       = $qty_after_all_stores_parent * $get_item2->qty_sub_item_unit;
+                                $qty_fraction_only              = $qty_after_all_stores_parent - floor($qty_after_all_stores_parent); // نسبة الكسر في الوحدة الرئيسية
+                                $qty_value_fraction_only        = $qty_fraction_only * $get_item2->qty_sub_item_unit;
+
+                                // dd($qty_after_all_stores_sub);
+
+
+                                $get_item2->total_qty_for_parent    = floor($qty_after_all_stores_parent);
+                                $get_item2->total_qty_for_sub_items = $qty_after_all_stores_sub;
+                                $get_item2->sub_item_qty            = $qty_value_fraction_only;
+                                $get_item2->save();
 
                     }
                 }

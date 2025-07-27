@@ -457,11 +457,7 @@ class Aprove extends Component
                     $this->item_batch->save();
 
                 }
-            }
 
-
-            foreach ($this->order_items as $order_detail)
-            {
                 // 5 -- UPDATE ITEM CARD MOVEMENTS TABLE تعديل جدول حركة الصنف *******************************
                     // ❖ نحسب الكمية بعد الإضافة
                     $qty_after_all_stores = ItemBatch::where('item_code', $order_detail->item_code)->sum('qty');
@@ -471,20 +467,29 @@ class Aprove extends Component
 
                     // ❖ نجهز حركة الصنف
                     $create_item_movement = new ItemCardMovement();
-                    $create_item_movement->item_code                    = $order_detail->item_code;
-                    $create_item_movement->store_id                     = $this->order->store_id;
-                    $create_item_movement->item_card_movements_category_id = $this->itemCardMoveCategory->id;
-                    $create_item_movement->item_card_movements_type_id  = $this->itemCardMoveType->id;
-                    $create_item_movement->purchase_order_id            = $this->order->auto_serial;
-                    $create_item_movement->purchase_orderdetiles__id    = $order_detail->id;
-                    $create_item_movement->qty_before_movement          = $order_detail->qty_before_all_stores;
-                    $create_item_movement->qty_after_movement           = $qty_after_all_stores;
-                    $create_item_movement->qty_before_movement_in_store = $order_detail->qty_before_this_store;
-                    $create_item_movement->qty_after_movement_in_store  = $qty_after_this_store;
-                    $create_item_movement->notes                        = $this->order->notes;
-                    $create_item_movement->company_code                 = auth()->user()->company_code;
-                    $create_item_movement->created_by                   = auth()->user()->id;
-                    $create_item_movement->updated_by                   = auth()->user()->id;
+                    $create_item_movement->item_code                        = $order_detail->item_code;
+                    $create_item_movement->store_id                         = $this->order->store_id;
+                    $create_item_movement->item_card_movements_category_id  = $this->itemCardMoveCategory->id;
+                    $create_item_movement->item_card_movements_type_id      = $this->itemCardMoveType->id;
+                    if (!empty($is_item_found))
+                    {
+                        $create_item_movement->item_batch_id                    = $is_item_found->auto_serial;
+
+                    }else
+                    {
+                        $create_item_movement->item_batch_id                    = $this->item_batch->auto_serial;
+                    }
+                    $create_item_movement->purchase_order_id                = $this->order->auto_serial;
+                    $create_item_movement->purchase_orderdetiles__id        = $order_detail->id;
+                    $create_item_movement->qty_before_movement              = $order_detail->qty_before_all_stores;
+                    $create_item_movement->qty_after_movement               = $qty_after_all_stores;
+                    $create_item_movement->qty_before_movement_in_store     = $order_detail->qty_before_this_store;
+                    $create_item_movement->qty_after_movement_in_store      = $qty_after_this_store;
+                    $create_item_movement->notes                            = $this->order->notes;
+                    $create_item_movement->date                             = Carbon::now();
+                    $create_item_movement->company_code                     = auth()->user()->company_code;
+                    $create_item_movement->created_by                       = auth()->user()->id;
+                    $create_item_movement->updated_by                       = auth()->user()->id;
 
                     $create_item_movement->save();
             }

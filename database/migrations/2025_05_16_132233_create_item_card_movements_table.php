@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('purchase_order_id')->nullable();
             $table->integer('purchase_orderdetiles__id')->nullable();
             $table->integer('sales_order_id')->nullable();
+            $table->integer('item_batch_id');
             $table->integer('sales_orderdetiles__id')->nullable();
             $table->decimal('qty_before_movement', 10, 2)->default(0.00);                             // الكمية قبل الحركة في كل المخازن
             $table->decimal('qty_after_movement', 10, 2)->default(0.00);                             // الكمية بعد الحركة في كل المخازن

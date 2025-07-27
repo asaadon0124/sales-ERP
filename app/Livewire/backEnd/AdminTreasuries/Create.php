@@ -80,6 +80,7 @@ class Create extends Component
             // dd(auth()->user()->id);
 
             // Dispatch events
+            $this->reset();   
             $this->dispatch('AdminTreasuriesCreateMS');           // Flash Message
             $this->dispatch('createModalToggle');                // Close Create Model
             $this->dispatch('refreshData')->to(Show::class);     // Refresh Index Page To Show New Record Created

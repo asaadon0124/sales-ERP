@@ -1,12 +1,13 @@
 <div class="table-responsive" wire:ignore.self>
 
     <div class="card-header bg-light border-bottom">
-        <form class="form form-horizontal {{ !empty($data) && !empty($data[0]->name) ? 'd-none' : '' }}" wire:submit.prevent='submit'>
+        <form class="form form-horizontal {{ !empty($data) && !empty($data[0]->name) ? 'd-none' : '' }}"
+            wire:submit.prevent='submit'>
             <div class="modal-body">
                 <div class="row align-items-end">
 
 
-                     {{-- نوع الجرد --}}
+                    {{-- نوع الجرد --}}
                     <div class="col-md-3 mb-3">
                         <div class="form-group">
                             <label class="font-weight-bold">نوع الجرد</label>
@@ -21,6 +22,7 @@
                             @include('backEnd.error', ['property' => 'rebort_type'])
                         </div>
                     </div>
+
 
                     {{-- نوع الصنف --}}
                     <div class="col-md-3 mb-3 {{ $rebort_type == '0' ? '' : 'd-none' }}">
@@ -61,7 +63,8 @@
                     <div class="col-md-3 mb-3 {{ $rebort_type == '2' ? '' : 'd-none' }}">
                         <div class="form-group">
                             <label class="font-weight-bold">اسم الصنف</label>
-                            <select wire:model="item_name" wire:loading.attr="disabled" class="form-control"
+                            <select wire:model="item_name" wire:loading.attr="disabled"
+                                class="form-control"wire:change="ItemNameChange($event.target.value)"
                                 wire:target="item_name">
                                 <option value="">اختار اسم الصنف</option>
                                 @if (!empty($items))
@@ -71,6 +74,24 @@
                                 @endif
                             </select>
                             @include('backEnd.error', ['property' => 'item_name'])
+                        </div>
+                    </div>
+
+
+                    {{-- اسم المخزن --}}
+                    <div class="col-md-3 mb-3 {{ $rebort_type == '2' ? '' : 'd-none' }}">
+                        <div class="form-group">
+                            <label class="font-weight-bold">اسم المخزن</label>
+                            <select wire:model="store_name" wire:loading.attr="disabled" class="form-control"
+                                wire:target="store_name">
+                                <option value="">كل المخازن</option>
+                                @if (!empty($stores))
+                                    @foreach ($stores as $store)
+                                        <option value="{{ $store->id }}">{{ $store->name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                            @include('backEnd.error', ['property' => 'store_name'])
                         </div>
                     </div>
 
@@ -179,10 +200,14 @@
             <table class="table table-bordered table-striped">
                 <thead class="bg-info">
                     <tr>
-                        <th>رقم الحركة</th>
+                        <th># </th>
                         <th>نوع الحركة</th>
                         <th>اسم الحركة</th>
+                         <th>رقم الفاتورة</th>
+                        <th>اسم المورد</th>
+                        <th>اسم العميل</th>
                         <th>اسم المخزن</th>
+                        <th class="{{ $rebort_type == '2' ? 'd-none' : '' }}">اسم الصنف</th>
                         <th>رصيد قبل</th>
                         <th>الكمية</th>
                         <th>رصيد بعد</th>
@@ -192,15 +217,21 @@
                 </thead>
                 <tbody>
                     @if (!empty($data))
-                        @foreach ($data as $item)
-                            @foreach ($item->item_card_movements as $movement)
+                        @php
+                            $grouped = $data->groupBy('item.item_code');
+                        @endphp
+                        @foreach ($grouped as $item_code => $movements)
+                            @foreach ($movements as $movement)
                                 <tr>
                                     <td>{{ $movement->id }}</td>
                                     <td>{{ $movement->itemMovementType->name }}</td>
                                     <td>{{ $movement->itemMovementCategory->name }}</td>
-                                    <td>{{ $movement->item->name }}</td>
-                                    <td>{{ $movement->qty_before_movement }} {{ $movement->item->itemUnit->name }}
-                                    </td>
+                                    <td style="cursor: pointer">{{ $movement->purchase_order_id != ''   ? $movement->purchase_order_id  . 'مشتريات': $movement->sales_order_id  . 'مبيعات'}}</td>
+                                    <td>{{ $movement->purchase_order_id != ''   ? $movement->purchaseOrder->supplier->name  :'-'}}</td>
+                                    <td>{{ $movement->sales_order_id != ''      ? $movement->salesOrder->customer->name  :'-'}}</td>
+                                    <td>{{ $movement->item_batch->store->name }}</td>
+                                    <td class="{{ $rebort_type == '2' ? 'd-none' : '' }}">{{ $movement->item->name }}</td>
+                                    <td>{{ $movement->qty_before_movement }} {{ $movement->item->itemUnit->name }}</td>
                                     @php
                                         $diff = $movement->qty_after_movement - $movement->qty_before_movement;
                                     @endphp
@@ -210,8 +241,8 @@
                                     </td>
                                     <td>{{ $movement->qty_after_movement }} {{ $movement->item->itemUnit->name }}</td>
 
-                                    <td>{{ $item->created_at }}</td>
-                                    <td>{{ $item->adminCreate->name }}</td>
+                                    <td>{{ $movement->date }}</td>
+                                    <td>{{ $movement->adminCreate->name }}</td>
                                 </tr>
                             @endforeach
                         @endforeach
@@ -222,6 +253,11 @@
                     @endif
                 </tbody>
             </table>
+            <div class=" mt-2">
+                @if (!empty($data))
+                    {{ $data->links() }}
+                @endif
+            </div>
         </div>
 
         {{-- الفواتير --}}

@@ -8,6 +8,7 @@ use App\Models\ItemBatch;
 use App\Models\ItemCategory;
 use Livewire\WithPagination;
 use App\Models\ItemCardMovement;
+use App\Models\Store;
 use Illuminate\Support\Facades\DB;
 
 class Data extends Component
@@ -19,6 +20,7 @@ class Data extends Component
     public $item_type;
     public $item_category_id;
     public $item_name;
+    public $store_name;
     public $start_date;
     public $end_date;
     public $item_sort;
@@ -28,6 +30,7 @@ class Data extends Component
     public $search_invoices;
     public $items;
     public $item_categories;
+    public $stores;
     public $movements;
 
 
@@ -38,12 +41,13 @@ class Data extends Component
     // }
 
 
-
+    // لما اختار  نوع الجرد
     public function rebortTypeChange($value)
     {
         $this->item_type            = '';
         $this->item_category_id     = '';
         $this->item_name            = '';
+        $this->store_name           = '';
         $this->rebort_type          = $value;
 
         if ($this->rebort_type == '1')                      // فئة الصنف
@@ -64,6 +68,14 @@ class Data extends Component
     }
 
 
+    // لما اختار اسم الصنف
+    public function ItemNameChange($value)
+    {
+        $this->stores = Store::whereHas('item_batches',function($q) use($value)
+        {
+            $q->where('item_code',$value);
+        })->get();
+    }
 
 
     public function updatedStartDate()
@@ -136,21 +148,32 @@ class Data extends Component
 
         if ($this->search_movements)
         {
-            $query = Item::with(['item_batches', 'adminCreate', 'item_card_movements' => function($q)
-            {
-                $q->with('itemMovementCategory');
-            }]);
+            $query = ItemCardMovement::with(['itemMovementCategory', 'item', 'item_batch','itemMovementType','adminCreate','purchaseOrder','salesOrder']);
 
             if ($this->rebort_type == '0')                      // لو اختارت نوع الصنف
             {
-               $query->where('item_type',$this->item_type);
+                $query->whereHas('item', function ($q)
+                {
+                    $q->where('item_type', $this->item_type);
+                });
 
             } elseif ($this->rebort_type  == '1')               // لو اختارت فئة الصنف
             {
-                $query->where('item_category_id', $this->item_category_id);
+                $query->whereHas('item', function ($q)
+                {
+                    $q->where('item_category_id', $this->item_category_id);
+                });
+
             }else                                               // لو اختارت اسم الصنف
             {
                 $query->where('item_code', $this->item_name);
+                if ($this->store_name != '')
+                {
+                     $query->whereHas('item_batch', function ($q)
+                    {
+                        $q->where('store_id', $this->store_name);
+                    });
+                }
             }
 
 
@@ -161,11 +184,11 @@ class Data extends Component
                 {
                     if ($this->start_date)
                     {
-                        $q->where('created_at', '>=', $this->start_date);
+                        $q->where('date', '>=', $this->start_date);
                     }
                     if ($this->end_date)
                     {
-                        $q->where('created_at', '<=', $this->end_date);
+                        $q->where('date', '<=', $this->end_date);
                     }
                 });
             }
@@ -177,27 +200,34 @@ class Data extends Component
             // ترتيب حسب المطلوب
             if ($this->item_sort === '0')
             {
-                $query->orderBy('total_qty_for_parent', 'ASC'); // الكميات الأقل
+                $query->whereHas('item', function ($q)
+                {
+                    $q->orderBy('total_qty_for_parent', 'ASC'); // الكميات الأقل
+                });
+
             }
             elseif ($this->item_sort === '1')
             {
-                $query->orderBy('total_qty_for_parent', 'DESC'); // الكميات الأكثر
+                $query->whereHas('item', function ($q)
+                {
+                    $q->orderBy('total_qty_for_parent', 'DESC'); // الكميات الأكثر
+                });
             }
             elseif ($this->item_sort === '2')
             {
                 // أقرب تاريخ انتهاء من جدول الدفعات
-                $query->with(['item_batches' => function ($q)
+                $query->whereHas('item_batch', function ($q)
                 {
                     $q->orderBy('expire_date', 'asc');
-                }]);
+                });
             }
             elseif ($this->item_sort === '3')
             {
                 // أبعد تاريخ انتهاء من جدول الدفعات
-                $query->with(['item_batches' => function ($q)
+                $query->whereHas('item_batch', function ($q)
                 {
                     $q->orderBy('expire_date', 'desc');
-                }]);
+                });
             }
             elseif ($this->item_sort === '4')
             {
@@ -208,7 +238,7 @@ class Data extends Component
                 }])->orderBy('total_sales_qty', 'desc');
             }
 
-            $data = $query->paginate(2);
+            $data = $query->paginate(5);
             // dd($data);
         }
 
