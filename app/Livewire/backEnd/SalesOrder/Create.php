@@ -1602,7 +1602,7 @@ class Create extends Component
                                 $this->new_item_card_movements->item_card_movements_category_id = $this->itemCardMoveCategory->id;
                                 $this->new_item_card_movements->item_card_movements_type_id     = $this->itemCardMoveType->id;
                                 $this->new_item_card_movements->sales_order_id                  = $this->new_order->auto_serial;
-                                $this->new_item_card_movements->sales_orderdetiles__id          = $batch->auto_serial;
+                                $this->new_item_card_movements->sales_orderdetiles__id          = $this->new_order_detailes->id;
                                 $this->new_item_card_movements->item_batch_id                   = $batch->auto_serial;
                                 $this->new_item_card_movements->qty_before_movement             = $qty_before_all_stores;
                                 $this->new_item_card_movements->qty_before_movement_in_store    = $qty_before_this_store;

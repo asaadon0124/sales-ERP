@@ -253,7 +253,7 @@ class DataPay extends Component
             $action_history->action('اضافة ًصرف ', "اضافة ًصرف {$create->notes}", 'TreasuryTransaction', $create->id,auth()->user()->id);
             // dd('ahmed');
         DB::commit();
-        $this->reset(['cash_amount','move_date','notes']);
+        $this->reset(['cash_amount','move_date','notes','invoice_type_accounts','account_id','account_balance','moveType_id']);
 
         // Dispatch events to update UI
         $this->dispatch('treasury_transationsCreateMS');

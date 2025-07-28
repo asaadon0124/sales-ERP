@@ -617,6 +617,7 @@ class Create extends Component
                         $this->new_item_card_movements->item_code                           = $item_data['item_code'];
                         $this->new_item_card_movements->item_card_movements_category_id     = $this->itemCardMoveCategory->id;
                         $this->new_item_card_movements->item_card_movements_type_id         = $this->itemCardMoveType->id;
+                        $this->new_item_card_movements->item_batch_id                       = $this->new_order_detailes->batch_id;
                         $this->new_item_card_movements->sales_order_id                      = $this->order->auto_serial;
                         $this->new_item_card_movements->sales_orderdetiles__id              = $this->new_order_detailes->id;
                         $this->new_item_card_movements->qty_before_movement                 = $qty_before_all_stores;
@@ -627,6 +628,7 @@ class Create extends Component
                         $this->new_item_card_movements->company_code                        = auth()->user()->company_code;
                         $this->new_item_card_movements->created_by                          = auth()->user()->id;
                         $this->new_item_card_movements->updated_by                          = auth()->user()->id;
+                        $this->new_item_card_movements->date                                = Carbon::now();
                         $this->new_item_card_movements->save();
 
 

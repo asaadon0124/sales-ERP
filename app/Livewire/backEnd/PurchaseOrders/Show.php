@@ -59,21 +59,23 @@ class Show extends Component
 
 
 
-    public function render()
+  public function render()
+{
+    $data = PurchaseOrderDetailes::where('auto_serial_purchase_orders', $this->orderId)->where(function ($query)
     {
-        $data = PurchaseOrderDetailes::
-        where(function ($query)
-        {
-            $query->where('auto_serial_purchase_orders', 'like', '%' . $this->search . '%')
-            ->orWhere('item_code', 'like', '%' . $this->search . '%');
-        })
-        ->where('auto_serial_purchase_orders', $this->orderId)->with('item') // Ensure you are still filtering by ID
-        ->get();
-        // dd($this->order);
-        return view('back-end.purchase-orders.show',
-        [
-            'data' => $data,
-            'order' => $this->order
-        ]);
-    }
+        $query->where('expire_date', 'like', '%' . $this->search . '%')
+            ->orWhereHas('item', function ($q)
+            {
+                $q->where('name', 'like', '%' . $this->search . '%');
+            });
+    })
+    ->with('item')
+    ->get();
+
+    return view('back-end.purchase-orders.show', [
+        'data' => $data,
+        'order' => $this->order,
+    ]);
+}
+
 }

@@ -48,6 +48,8 @@ class Delete extends Component
         $this->servant                      = Servant::where('servant_code',$this->order->servant_code)->with('account_customer')->first();
         $this->item_card_movement           = ItemCardMovement::where('sales_orderdetiles__id',$this->salesOrderDetailesID)->first();
         $this->item                         = Item::where('item_code',$this->salesOrderDetailes->item_code)->first();
+
+
         $this->dispatch('deleteModalToggle');
     }
 
@@ -71,7 +73,8 @@ class Delete extends Component
         {
             DB::beginTransaction();
 
-                // dd($this->order->order_detailes->count());
+//  dd($this->item_card_movement);
+
                 if ($this->order->order_detailes->count() > 1)    // لو في اكتر من صنف داخل فاتورة المبيعات
                 {
                     // ********************************  الحسابات ******************************************
@@ -80,98 +83,98 @@ class Delete extends Component
 
                         // 2 - update SALES ORDER  تعديل جدول فاتورة المبيعات ******************************************
 
-                        $this->order->total_cost_before_all     = $this->order->order_detailes->sum('total') - $this->salesOrderDetailes->total;
-                        $this->order->tax_value                 = ($this->order->total_cost_before_all * $this->order->tax_percent) / 100;
-                        $this->order->total_before_discount     = $this->order->total_cost_before_all + $this->order->tax_value;
-                        $this->order->updated_by                = auth()->user()->id;
-                        // dd($this->order->total_cost_before_all);
-                        if ($this->order->discount_type == '1')     // لو نوع الخصم نسبة يبقي حنعدل نسبة الخصم
-                        {
-                            $this->order->discount_amount       =  ($this->order->total_before_discount * $this->order->discount_percent) / 100;
-                            $this->order->total_cost        = $this->order->total_before_discount - $this->order->discount_amount;
-                        }else
-                        {
-                            $this->order->total_cost        = $this->order->total_before_discount - $this->order->discount_amount;
-                        }
-                        $this->order->save();
+                            $this->order->total_cost_before_all     = $this->order->order_detailes->sum('total') - $this->salesOrderDetailes->total;
+                            $this->order->tax_value                 = ($this->order->total_cost_before_all * $this->order->tax_percent) / 100;
+                            $this->order->total_before_discount     = $this->order->total_cost_before_all + $this->order->tax_value;
+                            $this->order->updated_by                = auth()->user()->id;
+                            // dd($this->order->total_cost_before_all);
+                            if ($this->order->discount_type == '1')     // لو نوع الخصم نسبة يبقي حنعدل نسبة الخصم
+                            {
+                                $this->order->discount_amount       =  ($this->order->total_before_discount * $this->order->discount_percent) / 100;
+                                $this->order->total_cost        = $this->order->total_before_discount - $this->order->discount_amount;
+                            }else
+                            {
+                                $this->order->total_cost        = $this->order->total_before_discount - $this->order->discount_amount;
+                            }
+                            $this->order->save();
 
 
-                        if ($this->order->invoice_type == '0')                          // لو الفاتورة كاش كلها
-                        {
-                            // 2 - update SALES ORDER  تعديل جدول فاتورة المبيعات
-                                $this->order->paid                      = $this->order->total_cost;
-                                $this->order->mony_for_account          = $this->order->paid;
-                                $this->order->save();
+                            if ($this->order->invoice_type == '0')                          // لو الفاتورة كاش كلها
+                            {
+                                // 2 - update SALES ORDER  تعديل جدول فاتورة المبيعات
+                                    $this->order->paid                      = $this->order->total_cost;
+                                    $this->order->mony_for_account          = $this->order->paid;
+                                    $this->order->save();
 
-                            // 3 - update TREASURY TRANSACTION  تعديل جدول حركة النقدية ***************************
-                                $this->treasury_transation_table->cash_for_account         = 0;
-                                $this->treasury_transation_table->updated_by                = auth()->user()->id;
-                                $this->treasury_transation_table->cash_amount               = $this->order->paid;
-                                $this->treasury_transation_table->servant_cash_amount       = $this->order->paid * (-1);
-                                $this->treasury_transation_table->save();
+                                // 3 - update TREASURY TRANSACTION  تعديل جدول حركة النقدية ***************************
+                                    $this->treasury_transation_table->cash_for_account         = 0;
+                                    $this->treasury_transation_table->updated_by                = auth()->user()->id;
+                                    $this->treasury_transation_table->cash_amount               = $this->order->paid;
+                                    $this->treasury_transation_table->servant_cash_amount       = $this->order->paid * (-1);
+                                    $this->treasury_transation_table->save();
 
-                            // 4  -- UPDATE SERVANT TABLE تعديل جدول المناديب *******************************
-                                $this->servant->current_balance = $updateAccountBalance->getCurrentBalance($this->servant->account_number,'servant','account_customer');
-                                $this->servant->save();
+                                // 4  -- UPDATE SERVANT TABLE تعديل جدول المناديب *******************************
+                                    $this->servant->current_balance = $updateAccountBalance->getCurrentBalance($this->servant->account_number,'servant','account_customer');
+                                    $this->servant->save();
 
-                            // 5 -- UPDATE SERVANT ACCOUNTS TABLE تعديل جدول الحسابات الخاص بالمندوب  *******************************
-                                $this->servant->account_customer->current_balance = $updateAccountBalance->getCurrentBalance($this->servant->account_number,'servant','account_customer');
-                                $this->servant->account_customer->save();
+                                // 5 -- UPDATE SERVANT ACCOUNTS TABLE تعديل جدول الحسابات الخاص بالمندوب  *******************************
+                                    $this->servant->account_customer->current_balance = $updateAccountBalance->getCurrentBalance($this->servant->account_number,'servant','account_customer');
+                                    $this->servant->account_customer->save();
 
-                        }elseif($this->order->paid > 0 && $this->order->unpaid > 0)    // لو الفاتورة نص اجل
-                        {
-                            // 2 - update SALES ORDER  تعديل جدول فاتورة المبيعات
-                                $this->order->unpaid                    = $this->order->total_cost - $this->order->paid;
-                                $this->order->mony_for_account          = $this->order->unpaid * (-1);
-                                $this->order->save();
+                            }elseif($this->order->paid > 0 && $this->order->unpaid > 0)    // لو الفاتورة نص اجل
+                            {
+                                // 2 - update SALES ORDER  تعديل جدول فاتورة المبيعات
+                                    $this->order->unpaid                    = $this->order->total_cost - $this->order->paid;
+                                    $this->order->mony_for_account          = $this->order->unpaid * (-1);
+                                    $this->order->save();
 
-                            // 3 - update TREASURY TRANSACTION  تعديل جدول حركة النقدية *******************************
-                                $this->treasury_transation_table->cash_for_account          = $this->order->unpaid *(-1);
-                                $this->treasury_transation_table->updated_by                = auth()->user()->id;
-                                $this->treasury_transation_table->cash_amount               = $this->order->paid;
-                                $this->treasury_transation_table->servant_cash_amount       = $this->order->paid * (-1);
-                                $this->treasury_transation_table->save();
+                                // 3 - update TREASURY TRANSACTION  تعديل جدول حركة النقدية *******************************
+                                    $this->treasury_transation_table->cash_for_account          = $this->order->unpaid *(-1);
+                                    $this->treasury_transation_table->updated_by                = auth()->user()->id;
+                                    $this->treasury_transation_table->cash_amount               = $this->order->paid;
+                                    $this->treasury_transation_table->servant_cash_amount       = $this->order->paid * (-1);
+                                    $this->treasury_transation_table->save();
 
-                            // 4  -- UPDATE SERVANT TABLE تعديل جدول المناديب *******************************
-                                $this->servant->current_balance = $updateAccountBalance->getCurrentBalance($this->servant->account_number,'servant','account_customer');
-                                $this->servant->save();
+                                // 4  -- UPDATE SERVANT TABLE تعديل جدول المناديب *******************************
+                                    $this->servant->current_balance = $updateAccountBalance->getCurrentBalance($this->servant->account_number,'servant','account_customer');
+                                    $this->servant->save();
 
-                            // 5 -- UPDATE SERVANT ACCOUNTS TABLE تعديل جدول الحسابات الخاص بالمندوب  *******************************
-                                $this->servant->account_customer->current_balance = $updateAccountBalance->getCurrentBalance($this->servant->account_number,'servant','account_customer');
-                                $this->servant->account_customer->save();
+                                // 5 -- UPDATE SERVANT ACCOUNTS TABLE تعديل جدول الحسابات الخاص بالمندوب  *******************************
+                                    $this->servant->account_customer->current_balance = $updateAccountBalance->getCurrentBalance($this->servant->account_number,'servant','account_customer');
+                                    $this->servant->account_customer->save();
 
-                            // 6  -- UPDATE CUSTOMER TABLE تعديل جدول العملاء *******************************
-                                $this->order->customer->current_balance  = $updateAccountBalance->getCurrentBalance($this->order->customer->account_number,'customer','account_customer2');
-                                $this->order->customer->save();
-
-
-                            // 7 -- UPDATE CUSTOMER ACCOUNTS TABLE تعديل جدول الحسابات الخاص بالعملاء  *******************************
-                                $this->order->customer->customer_account->current_balance = $updateAccountBalance->getCurrentBalance($this->order->customer->customer_account->account_number,'customer','account_customer2');
-                                $this->order->customer->customer_account->save();
-
-                        }else                                                           // لو الفتورة اجل كلها
-                        {
-                            // 2 - update SALES ORDER  تعديل جدول فاتورة المبيعات
-                                $this->order->unpaid                    = $this->order->total_cost;
-                                $this->order->mony_for_account          = $this->order->unpaid * (-1);
-                                $this->order->save();
-
-                            // 3 - update TREASURY TRANSACTION  تعديل جدول حركة النقدية *******************************
-                                $this->treasury_transation_table->cash_for_account          = $this->order->unpaid *(-1);
-                                $this->treasury_transation_table->updated_by                = auth()->user()->id;
-                                // $this->treasury_transation_table->cash_amount               = $this->order->paid;
-                                // $this->treasury_transation_table->servant_cash_amount       = $this->order->paid * (-1);
-                                $this->treasury_transation_table->save();
-
-                            // 4  -- UPDATE CUSTOMER TABLE تعديل جدول العملاء *******************************
-                                $this->order->customer->current_balance  = $updateAccountBalance->getCurrentBalance($this->order->customer->account_number,'customer','account_customer2');
-                                $this->order->customer->save();
+                                // 6  -- UPDATE CUSTOMER TABLE تعديل جدول العملاء *******************************
+                                    $this->order->customer->current_balance  = $updateAccountBalance->getCurrentBalance($this->order->customer->account_number,'customer','account_customer2');
+                                    $this->order->customer->save();
 
 
-                            // 5 -- UPDATE CUSTOMER ACCOUNTS TABLE تعديل جدول الحسابات الخاص بالعملاء  *******************************
-                                $this->order->customer->customer_account->current_balance = $updateAccountBalance->getCurrentBalance($this->order->customer->customer_account->account_number,'customer','account_customer2');
-                                $this->order->customer->customer_account->save();
-                        }
+                                // 7 -- UPDATE CUSTOMER ACCOUNTS TABLE تعديل جدول الحسابات الخاص بالعملاء  *******************************
+                                    $this->order->customer->customer_account->current_balance = $updateAccountBalance->getCurrentBalance($this->order->customer->customer_account->account_number,'customer','account_customer2');
+                                    $this->order->customer->customer_account->save();
+
+                            }else                                                           // لو الفتورة اجل كلها
+                            {
+                                // 2 - update SALES ORDER  تعديل جدول فاتورة المبيعات
+                                    $this->order->unpaid                    = $this->order->total_cost;
+                                    $this->order->mony_for_account          = $this->order->unpaid * (-1);
+                                    $this->order->save();
+
+                                // 3 - update TREASURY TRANSACTION  تعديل جدول حركة النقدية *******************************
+                                    $this->treasury_transation_table->cash_for_account          = $this->order->unpaid *(-1);
+                                    $this->treasury_transation_table->updated_by                = auth()->user()->id;
+                                    // $this->treasury_transation_table->cash_amount               = $this->order->paid;
+                                    // $this->treasury_transation_table->servant_cash_amount       = $this->order->paid * (-1);
+                                    $this->treasury_transation_table->save();
+
+                                // 4  -- UPDATE CUSTOMER TABLE تعديل جدول العملاء *******************************
+                                    $this->order->customer->current_balance  = $updateAccountBalance->getCurrentBalance($this->order->customer->account_number,'customer','account_customer2');
+                                    $this->order->customer->save();
+
+
+                                // 5 -- UPDATE CUSTOMER ACCOUNTS TABLE تعديل جدول الحسابات الخاص بالعملاء  *******************************
+                                    $this->order->customer->customer_account->current_balance = $updateAccountBalance->getCurrentBalance($this->order->customer->customer_account->account_number,'customer','account_customer2');
+                                    $this->order->customer->customer_account->save();
+                            }
 
                     // ********************************  المخازن ******************************************
 
@@ -209,8 +212,8 @@ class Delete extends Component
                                     ->selectRaw('SUM(qty - deduction) as total')->value('total');
 
                         // 5 - حذف جدول حركات الصنف  ITEM CARD MOVEMENTS
-                            $this->item_card_movement->delete;
-
+                            $this->item_card_movement->delete();
+                            // dd($this->item_card_movement);
                         // 6 -- UPDATE ITEMS TABLE تعديل جدول الخاص الاصناف  *******************************
 
                                 $qty_after_all_stores_parent                            = $qty_after_all_stores;
@@ -338,7 +341,7 @@ class Delete extends Component
                             $action_history->action('حذف صنف  من فاتورة مبيعات حالية ', "حذف صنف  من فاتورة مبيعات حالية {$this->item->name}", 'SalesOrderDetail', $this->salesOrderDetailes->id,auth()->user()->id);
                 }
 
-
+                // dd('ahmed');
             DB::commit();
 
                 if ($this->order->order_detailes->count() > 0)
@@ -351,9 +354,7 @@ class Delete extends Component
                 {
                     // لو مفيش أصناف بعد الحذف (آخر صنف اتحذف)
                     toastr()->error('تم حذف الصنف و الفاتورة بنجاح', 'رسالة حذف');
-                    $this->dispatch('redirectToIndex');
-
-
+                    return redirect()->route('salesOrder.index');
                 }
         } catch (\Throwable $th)
         {

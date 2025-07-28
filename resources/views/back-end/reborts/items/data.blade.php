@@ -158,24 +158,14 @@
             <a class="nav-link active" id="pills-home-tab" data-toggle="pill" href="#pills-home" role="tab"
                 aria-controls="pills-home" aria-selected="true">جرد الصنف</a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" id="pills-profile-tab" data-toggle="pill" href="#pills-profile" role="tab"
-                aria-controls="pills-profile" aria-selected="false">الفواتير</a>
+        <li class="nav-item ml-4">
+              <button class="btn btn-secondary me-2" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button>
         </li>
     </ul>
 
-    <!-- الرصيد -->
-    @if (!empty($customer))
-        <h4 class="text-center mb-4">
-            الرصيد الحالي للعميل:
-            <strong class="{{ $customer->current_balance < 0 ? 'text-danger' : 'text-success' }}">
-                {{ $customer->current_balance }}
-            </strong>
-        </h4>
-    @endif
 
     <!-- Tab content -->
-    <div class="tab-content" id="pills-tabContent">
+    <div class="tab-content" id="print-area">
 
         {{-- جرد الصنف --}}
         <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
@@ -203,7 +193,7 @@
                         <th># </th>
                         <th>نوع الحركة</th>
                         <th>اسم الحركة</th>
-                         <th>رقم الفاتورة</th>
+                        <th>رقم الفاتورة</th>
                         <th>اسم المورد</th>
                         <th>اسم العميل</th>
                         <th>اسم المخزن</th>
@@ -211,6 +201,7 @@
                         <th>رصيد قبل</th>
                         <th>الكمية</th>
                         <th>رصيد بعد</th>
+                        <th>اجمالي الكميات</th>
                         <th>تاريخ</th>
                         <th>بواسطة</th>
                     </tr>
@@ -226,12 +217,24 @@
                                     <td>{{ $movement->id }}</td>
                                     <td>{{ $movement->itemMovementType->name }}</td>
                                     <td>{{ $movement->itemMovementCategory->name }}</td>
-                                    <td style="cursor: pointer">{{ $movement->purchase_order_id != ''   ? $movement->purchase_order_id  . 'مشتريات': $movement->sales_order_id  . 'مبيعات'}}</td>
-                                    <td>{{ $movement->purchase_order_id != ''   ? $movement->purchaseOrder->supplier->name  :'-'}}</td>
-                                    <td>{{ $movement->sales_order_id != ''      ? $movement->salesOrder->customer->name  :'-'}}</td>
+                                    <td style="cursor: pointer"
+                                        wire:click.prevent="$dispatch('ShowInvoice',
+                                            {
+                                                id: {{ $movement->purchase_order_id != '' ? $movement->purchase_order_id : $movement->sales_order_id }},
+                                                invoiceType: '{{ $movement->purchase_order_id != '' ? 'purchase' : 'sales' }}'
+                                            })">
+                                        {{ $movement->purchase_order_id != '' ? $movement->purchase_order_id . ' مشتريات' : $movement->sales_order_id . ' مبيعات' }}
+                                    </td>
+                                    {{-- <td style="cursor: pointer" wire:click.prevent="$dispatch('ShowInvoice', {id: {{ $movement->purchase_order_id != '' ? $movement->purchase_order_id : $movement->sales_order_id}}})">{{ $movement->purchase_order_id != ''   ? $movement->purchase_order_id  . 'مشتريات': $movement->sales_order_id  . 'مبيعات'}}</td> --}}
+                                    <td>{{ $movement->purchase_order_id != '' ? $movement->purchaseOrder->supplier->name : '-' }}
+                                    </td>
+                                    <td>{{ $movement->sales_order_id != '' ? $movement->salesOrder->customer->name : '-' }}
+                                    </td>
                                     <td>{{ $movement->item_batch->store->name }}</td>
-                                    <td class="{{ $rebort_type == '2' ? 'd-none' : '' }}">{{ $movement->item->name }}</td>
-                                    <td>{{ $movement->qty_before_movement }} {{ $movement->item->itemUnit->name }}</td>
+                                    <td class="{{ $rebort_type == '2' ? 'd-none' : '' }}">{{ $movement->item->name }}
+                                    </td>
+                                    <td>{{ $movement->qty_before_movement }} {{ $movement->item->itemUnit->name }}
+                                    </td>
                                     @php
                                         $diff = $movement->qty_after_movement - $movement->qty_before_movement;
                                     @endphp
@@ -240,8 +243,8 @@
                                         {{ $diff }} {{ $movement->item->itemUnit->name }}
                                     </td>
                                     <td>{{ $movement->qty_after_movement }} {{ $movement->item->itemUnit->name }}</td>
-
-                                    <td>{{ $movement->date }}</td>
+                                    <td>{{ $movement->total_sales_qty * -1}}</td>
+                                    <td>{{ $movement->date}} </td>
                                     <td>{{ $movement->adminCreate->name }}</td>
                                 </tr>
                             @endforeach
@@ -260,69 +263,7 @@
             </div>
         </div>
 
-        {{-- الفواتير --}}
-        <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">
-            @if (!empty($data_invoices) && !empty($customer))
-                <div class="text-center mb-3">
-                    <h5 class="text-primary">فواتير المشتريات من الصنف: <strong>{{ $customer->name }}</strong></h5>
-                    @if ($start_date != '')
-                        <p class="text-muted">الفترة من <span class="text-info">{{ $start_date }}</span> إلى <span
-                                class="text-info">{{ $end_date }}</span></p>
-                    @else
-                        <p class="text-muted">(كل الحركات الصنف )</p>
-                    @endif
-                </div>
-            @endif
 
-            <table class="table table-bordered table-striped">
-                <thead class="bg-info">
-                    <tr>
-                        <th>#</th>
-                        <th>رقم الفاتورة</th>
-                        <th>نوع الفاتورة</th>
-                        <th>حالة الفاتورة</th>
-                        <th>تاريخ</th>
-                        <th>الإجمالي قبل الخصم</th>
-                        <th>الإجمالي</th>
-                        <th>المدفوع</th>
-                        <th>المتبقي</th>
-                        <th>بواسطة</th>
-                        <th>الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (!empty($data_invoices) && !empty($customer))
-                        @php $x = 1; @endphp
-                        @foreach ($data_invoices as $item)
-                            <tr>
-                                <td>{{ $x++ }}</td>
-                                <td>{{ $item->auto_serial }}</td>
-                                <td>{{ $item->InvoiceType() }}</td>
-                                <td>مبيعات</td>
-                                <td>{{ $item->order_date }}</td>
-                                <td>{{ $item->total_cost_before_all }}</td>
-                                <td>{{ $item->total_cost }}</td>
-                                <td>{{ $item->paid * -1 }}</td>
-                                <td>{{ $item->unpaid }}</td>
-                                <td>{{ $item->adminCreate->name }}</td>
-                                <td>
-                                    @can('تفاصيل فاتورة المبيعات')
-                                        <a class="btn btn-warning waves-effect waves-float waves-light" title="Show"
-                                            wire:navigate href="{{ route('salesOrder.show', $item->auto_serial) }}">
-                                            المزيد
-                                        </a>
-                                    @endcan
-                                </td>
-                            </tr>
-                        @endforeach
-                    @else
-                        <tr>
-                            <td colspan="11" class="text-center text-danger">لا يوجد بيانات</td>
-                        </tr>
-                    @endif
-                </tbody>
-            </table>
-        </div>
 
     </div>
 

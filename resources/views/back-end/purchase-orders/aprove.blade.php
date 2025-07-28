@@ -21,7 +21,7 @@
                         {{-- نسبة الضريبة  tax_percent --}}
                         <div class="col-sm-6 mb-4">
                             <label> نسبة الضريبة </label>
-                            <input type="number" class="form-control" wire:model="tax_percent" wire:change="change_tax_percent($event.target.value)">
+                            <input type="number" class="form-control" wire:model="tax_percent" wire:change="change_tax_percent($event.target.value)" max="100">
                             @include('backEnd.error', ['property' => 'tax_percent'])
                         </div>
 

@@ -52,18 +52,14 @@ class Data extends Component
 
         if ($this->rebort_type == '1')                      // فئة الصنف
         {
-            $this->item_categories = ItemCategory::whereHas('items', function ($q) use ($value)
-            {
+            $this->item_categories = ItemCategory::whereHas('items', function ($q) use ($value) {
                 $q->where('total_qty_for_parent', '>', 0);
             })->get();
-
-        }elseif($this->rebort_type == '2')              // اسم الصنف
+        } elseif ($this->rebort_type == '2')              // اسم الصنف
         {
-            $this->items        = Item::where('total_qty_for_parent','>',0)->with('itemUnit','itemCategory','item_card_movements')->get();
-
-        }else                                           // نوع الصنف
+            $this->items        = Item::where('total_qty_for_parent', '>', 0)->with('itemUnit', 'itemCategory', 'item_card_movements')->get();
+        } else                                           // نوع الصنف
         {
-
         }
     }
 
@@ -71,9 +67,8 @@ class Data extends Component
     // لما اختار اسم الصنف
     public function ItemNameChange($value)
     {
-        $this->stores = Store::whereHas('item_batches',function($q) use($value)
-        {
-            $q->where('item_code',$value);
+        $this->stores = Store::whereHas('item_batches', function ($q) use ($value) {
+            $q->where('item_code', $value);
         })->get();
     }
 
@@ -103,24 +98,25 @@ class Data extends Component
 
     public function submit()
     {
-         $validated = $this->validate(
-        [
+        $validated = $this->validate(
+            [
 
-            'rebort_type'       => 'required',
-            'item_type'         => $this->rebort_type == '0' ? 'required' : 'nullable',
-            'item_category_id'  => $this->rebort_type == '1' ? 'required' : 'nullable',
-            'item_name'         => $this->rebort_type == '2' ? 'required' : 'nullable',
+                'rebort_type'       => 'required',
+                'item_type'         => $this->rebort_type == '0' ? 'required' : 'nullable',
+                'item_category_id'  => $this->rebort_type == '1' ? 'required' : 'nullable',
+                'item_name'         => $this->rebort_type == '2' ? 'required' : 'nullable',
 
-        ],
-        [
-            'rebort_type.required'               => 'نوع الجرد مطلوب.',
-            'item_type.required'                 => 'نوع الصنف مطلوب.',
-            'item_category_id.required'          => 'فئة الصنف مطلوب.',
-            'item_name.required'                 => 'اسم الصنف مطلوب.',
-        ]);
+            ],
+            [
+                'rebort_type.required'               => 'نوع الجرد مطلوب.',
+                'item_type.required'                 => 'نوع الصنف مطلوب.',
+                'item_category_id.required'          => 'فئة الصنف مطلوب.',
+                'item_name.required'                 => 'اسم الصنف مطلوب.',
+            ]
+        );
 
 
-        if ($this->start_date > $this->end_date)
+        if ($this->start_date > $this->end_date && $this->end_date != '')
         {
             $this->addError('start_date', 'يجب ان يكون تاريخ البداية قبل تاريخ النهاية.');
             return;
@@ -146,9 +142,8 @@ class Data extends Component
         $item           = '';
         $data_invoices  = '';
 
-        if ($this->search_movements)
-        {
-            $query = ItemCardMovement::with(['itemMovementCategory', 'item', 'item_batch','itemMovementType','adminCreate','purchaseOrder','salesOrder']);
+        if ($this->search_movements) {
+            $query = ItemCardMovement::with(['itemMovementCategory', 'item', 'item_batch', 'itemMovementType', 'adminCreate', 'purchaseOrder', 'salesOrder']);
 
             if ($this->rebort_type == '0')                      // لو اختارت نوع الصنف
             {
@@ -156,20 +151,18 @@ class Data extends Component
                 {
                     $q->where('item_type', $this->item_type);
                 });
-
             } elseif ($this->rebort_type  == '1')               // لو اختارت فئة الصنف
             {
                 $query->whereHas('item', function ($q)
                 {
                     $q->where('item_category_id', $this->item_category_id);
                 });
-
-            }else                                               // لو اختارت اسم الصنف
+            } else                                               // لو اختارت اسم الصنف
             {
                 $query->where('item_code', $this->item_name);
                 if ($this->store_name != '')
                 {
-                     $query->whereHas('item_batch', function ($q)
+                    $query->whereHas('item_batch', function ($q)
                     {
                         $q->where('store_id', $this->store_name);
                     });
@@ -177,20 +170,17 @@ class Data extends Component
             }
 
 
-             // فلترة بالتاريخ من جدول الحركات
+            // فلترة بالتاريخ من جدول الحركات
             if ($this->start_date || $this->end_date)
             {
-                $query->whereHas('item_card_movements', function ($q)
-                {
                     if ($this->start_date)
                     {
-                        $q->where('date', '>=', $this->start_date);
+                        $query->where('date', '>=', $this->start_date);
                     }
                     if ($this->end_date)
                     {
-                        $q->where('date', '<=', $this->end_date);
+                        $query->where('date', '<=', $this->end_date);
                     }
-                });
             }
 
 
@@ -204,38 +194,39 @@ class Data extends Component
                 {
                     $q->orderBy('total_qty_for_parent', 'ASC'); // الكميات الأقل
                 });
-
-            }
-            elseif ($this->item_sort === '1')
+            } elseif ($this->item_sort === '1')
             {
                 $query->whereHas('item', function ($q)
                 {
                     $q->orderBy('total_qty_for_parent', 'DESC'); // الكميات الأكثر
                 });
-            }
-            elseif ($this->item_sort === '2')
-            {
+            } elseif ($this->item_sort === '2') {
                 // أقرب تاريخ انتهاء من جدول الدفعات
-                $query->whereHas('item_batch', function ($q)
-                {
+                $query->whereHas('item_batch', function ($q) {
                     $q->orderBy('expire_date', 'asc');
                 });
-            }
-            elseif ($this->item_sort === '3')
-            {
+            } elseif ($this->item_sort === '3') {
                 // أبعد تاريخ انتهاء من جدول الدفعات
-                $query->whereHas('item_batch', function ($q)
-                {
+                $query->whereHas('item_batch', function ($q) {
                     $q->orderBy('expire_date', 'desc');
                 });
-            }
-            elseif ($this->item_sort === '4')
+            } elseif ($this->item_sort === '4')
             {
-                // الأكثر مبيعًا من جدول الحركات
-                $query->withCount(['sales_movements as total_sales_qty' => function ($q)
-                {
-                    $q->select(DB::raw("SUM(qty_before_movement - qty_after_movement)"));
-                }])->orderBy('total_sales_qty', 'desc');
+               // subquery لحساب الكمية المباعة لكل item_code
+                $subQuery = ItemCardMovement::select(
+                    'item_code',
+                    DB::raw('SUM(qty_before_movement - qty_after_movement) as total_sales_qty')
+
+                )->groupBy('item_code');
+
+                // إعادة تهيئة الاستعلام مع joinSub للربط بالـ subquery
+                $query = ItemCardMovement::with(['itemMovementCategory', 'item', 'item_batch', 'itemMovementType', 'adminCreate', 'purchaseOrder', 'salesOrder'])
+                    ->joinSub($subQuery, 'sub', function($join)
+                    {
+                        $join->on('item_card_movements.item_code', '=', 'sub.item_code');
+                    })
+                    ->select('item_card_movements.*', 'sub.total_sales_qty')
+                    ->orderBy('sub.total_sales_qty','asc');
             }
 
             $data = $query->paginate(5);
@@ -244,5 +235,4 @@ class Data extends Component
 
         return view('back-end.reborts.items.data', compact('data', 'item', 'data_invoices'));
     }
-
 }

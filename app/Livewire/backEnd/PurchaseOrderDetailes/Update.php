@@ -66,6 +66,12 @@ class Update extends Component
         {
             $this->item_selected_detailes   = Item::where('item_code', $value)->with('itemUnitChild', 'itemUnit')->first();
             $this->item_type                = $this->item_selected_detailes->item_type;
+            $this->item_units_id            = null;
+            $this->qty                      = 0;
+            $this->unit_price               = 0;
+            $this->total                    = 0;
+            $this->production_date          = null;
+            $this->expire_date              = null;
 
         } else
         {

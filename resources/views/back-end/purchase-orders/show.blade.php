@@ -182,8 +182,9 @@
                         @endif
 
 
-                        <!-- <input type="text" wire:model.live="search" class="form-control w-25 ms-2" placeholder="بحث"> -->
                         <input type="text" wire:model.live="search" class="form-control w-25" placeholder="بحث">
+                         {{-- <button class="btn btn-danger"wire:click.prevent="$dispatch('orderDetailesBack')">رجوع</button> --}}
+                         <a href="{{ route('purchaseOrders.index') }}" class="btn btn-danger">رجوع</a>
                     </div>
 
                     <table class="table table-bordered table-striped dataTable" style="margin: 10px">

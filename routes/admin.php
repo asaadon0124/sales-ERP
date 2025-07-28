@@ -4,6 +4,8 @@ use Livewire\Livewire;
 use App\Models\Treasuries;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\BackEnd\Treasuries\Create;
+use App\Http\Controllers\Admin\PDFController;
+use App\Http\Controllers\PDFExportController;
 use App\Http\Controllers\Admin\adminsController;
 use App\Http\Controllers\Admin\ShiftsController;
 use App\Http\Controllers\backEnd\AuthController;
@@ -11,6 +13,7 @@ use App\Http\Controllers\BackEnd\ItemsController;
 use App\Http\Controllers\backEnd\rolesController;
 use App\Http\Controllers\backEnd\StoresController;
 use App\Http\Controllers\Admin\MoveTypesController;
+use App\Http\Controllers\backEnd\rebortsController;
 use App\Http\Controllers\backEnd\AccountsController;
 use App\Http\Controllers\backEnd\servantsController;
 use App\Http\Controllers\Admin\SalesOrdersController;
@@ -25,13 +28,12 @@ use App\Http\Controllers\backEnd\AccountsTypesController;
 use App\Http\Controllers\backEnd\adminSittingsController;
 use App\Http\Controllers\backEnd\materialTypesController;
 use App\Http\Controllers\backEnd\PurchaseOrdersController;
+use App\Http\Controllers\backEnd\actionHistoriesController;
 use App\Http\Controllers\backEnd\AdminTreasuriesController;
-use App\Http\Controllers\backEnd\rebortsController;
 use App\Http\Controllers\Admin\TreasuryTransactionController;
 use App\Http\Controllers\backEnd\suppliersCategoryController;
 use App\Http\Controllers\Admin\ItemCardMovementTypesController;
 use App\Http\Controllers\Admin\ItemCardMovementCategoryController;
-use App\Http\Controllers\backEnd\actionHistoriesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -297,6 +299,10 @@ Route::prefix('admin')->group(function()
 
                 Route::get('/items', [rebortsController::class, 'items_reborts'])->name('Reborts.items.index');
                 Route::get('/stores', [rebortsController::class, 'stores_reborts'])->name('Reborts.stores.index');
+
+
+                Route::get('/invoice-pdf/{id}/{type}', [PDFController::class, 'downloadInvoice'])->name('invoice.download');
+
             });
         });
 
