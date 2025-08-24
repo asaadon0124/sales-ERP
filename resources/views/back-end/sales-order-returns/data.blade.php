@@ -72,7 +72,7 @@
 
 
                         <td>
-                            @if (!empty($get_active_shift))
+                            @if (!empty($get_active_shift) && $item->approve != '1')
                                 <div class="d-flex align-items-center">
                                     @can('تعديل فاتورة مرتجع المبيعات')
                                         <a class="btn btn-primary waves-effect waves-float waves-light" title="Edit"

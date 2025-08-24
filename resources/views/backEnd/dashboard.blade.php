@@ -257,6 +257,72 @@
 
 
 
+
+
+
+            {{-- التقارير --}}
+            <div class="row">
+                <div class="col-lg-3 col-6">
+                    <!-- small box -->
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <p> تقارير العملاء</p>
+                        </div>
+                        <div class="icon">
+                            <i class="ion ion-bag"></i>
+                        </div>
+                        <a href="{{ route('Reborts.customers.index') }}" class="small-box-footer">المزيد <i class="fas fa-arrow-circle-right"></i></a>
+                    </div>
+                </div>
+                <!-- ./col -->
+
+
+
+                <div class="col-lg-3 col-6">
+                    <!-- small box -->
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <p>تقارير الموردين</p>
+                        </div>
+                        <div class="icon">
+                            <i class="ion ion-stats-bars"></i>
+                        </div>
+                        <a href="{{ route('Reborts.suppliers.index') }}" class="small-box-footer">المزيد <i class="fas fa-arrow-circle-right"></i></a>
+                    </div>
+                </div>
+                <!-- ./col -->
+
+
+                <div class="col-lg-3 col-6">
+                    <!-- small box -->
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <p>تقارير الاصناف</p>
+                        </div>
+                        <div class="icon">
+                            <i class="ion ion-person-add"></i>
+                        </div>
+                        <a href="{{ route('Reborts.items.index') }}" class="small-box-footer">المزيد <i class="fas fa-arrow-circle-right"></i></a>
+                    </div>
+                </div>
+                <!-- ./col -->
+
+
+                <div class="col-lg-3 col-6">
+                    <!-- small box -->
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <p>تقارير المخازن</p>
+                        </div>
+
+                        <a href="{{ route('Reborts.stores.index') }}" class="small-box-footer">المزيد <i class="fas fa-arrow-circle-right"></i></a>
+                    </div>
+                </div>
+                <!-- ./col -->
+            </div>
+
+
+
              {{-- الاعدادات و الصلاحيات --}}
              <div class="row">
                 <div class="col-lg-3 col-6">
@@ -268,7 +334,7 @@
                         <div class="icon">
                             <i class="ion ion-bag"></i>
                         </div>
-                        <a href="{{ route('itemCategories.index') }}" class="small-box-footer">المزيد <i class="fas fa-arrow-circle-right"></i></a>
+                        <a href="{{ route('adminSittings.index') }}" class="small-box-footer">المزيد <i class="fas fa-arrow-circle-right"></i></a>
                     </div>
                 </div>
                 <!-- ./col -->
@@ -284,7 +350,7 @@
                         <div class="icon">
                             <i class="ion ion-stats-bars"></i>
                         </div>
-                        <a href="{{ route('itemUnits.index') }}" class="small-box-footer">المزيد <i class="fas fa-arrow-circle-right"></i></a>
+                        <a href="{{ route('permissions.index') }}" class="small-box-footer">المزيد <i class="fas fa-arrow-circle-right"></i></a>
                     </div>
                 </div>
                 <!-- ./col -->
@@ -299,7 +365,7 @@
                         <div class="icon">
                             <i class="ion ion-person-add"></i>
                         </div>
-                        <a href="{{ route('items.index') }}" class="small-box-footer">المزيد <i class="fas fa-arrow-circle-right"></i></a>
+                        <a href="{{ route('roles.index') }}" class="small-box-footer">المزيد <i class="fas fa-arrow-circle-right"></i></a>
                     </div>
                 </div>
                 <!-- ./col -->
@@ -312,7 +378,7 @@
                             <p>الموظفين</p>
                         </div>
 
-                        <a href="{{ route('stores.index') }}" class="small-box-footer">المزيد <i class="fas fa-arrow-circle-right"></i></a>
+                        <a href="{{ route('Reborts.employees.index') }}" class="small-box-footer">المزيد <i class="fas fa-arrow-circle-right"></i></a>
                     </div>
                 </div>
                 <!-- ./col -->

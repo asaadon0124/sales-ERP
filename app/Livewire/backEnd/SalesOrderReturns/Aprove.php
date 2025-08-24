@@ -633,7 +633,11 @@ class Aprove extends Component
 
             }elseif($this->total_cost_after_deduct_customer_balance <= 0)   // لو مش باقي فلوس في الفاتورة بعد الخصم من رصيد العميل
             {
-
+                if ($this->order->invoice_type == '1' )
+                {
+                    $this->addError('invoice_type', 'هذه الفاتورة يجب ان تكون كاش.');
+                    return;
+                }
                 // B - نعمل ايصال تحصيل الفلوس لحساب العميل
                     // CREATE TREASURY TRANSACTIONS TABLE انشاء جدول حركة النقدية *******************************
                     $this->treasury_transation_table_customer                            =  new TreasuryTransation();
@@ -695,132 +699,132 @@ class Aprove extends Component
 
             }
 
-        // 4 -- UPDATE ITEM BATCHES TABLE تعديل جدول بتشات الصنف *******************************
+                // 4 -- UPDATE ITEM BATCHES TABLE تعديل جدول بتشات الصنف *******************************
 
-            $this->order_items = $this->order->order_detailes;
+                $this->order_items = $this->order->order_detailes;
 
 
-            foreach ($this->order_items as $order_detail)
-            {
-                // ❖ نحسب الكمية قبل الإضافة
-                $qty_before_all_stores = ItemBatch::where('item_code', $order_detail->item_code)->selectRaw('SUM(qty - deduction) as total')->value('total') ?? 0;
-                $qty_before_this_store = ItemBatch::where('item_code', $order_detail->item_code)->where('store_id', $order_detail->store_id)->selectRaw('SUM(qty - deduction) as total')->value('total') ?? 0;
-
-                $get_item = Item::where('item_code', $order_detail->item_code)->with(['itemUnit' => function($q)
+                foreach ($this->order_items as $order_detail)
                 {
-                    $q->withoutGlobalScope(ActiveScope::class);
+                    // ❖ نحسب الكمية قبل الإضافة
+                    $qty_before_all_stores = ItemBatch::where('item_code', $order_detail->item_code)->selectRaw('SUM(qty - deduction) as total')->value('total') ?? 0;
+                    $qty_before_this_store = ItemBatch::where('item_code', $order_detail->item_code)->where('store_id', $order_detail->store_id)->selectRaw('SUM(qty - deduction) as total')->value('total') ?? 0;
 
-                }])->first();
-                $get_parent_item_unit = $get_item->itemUnit->name;
+                    $get_item = Item::where('item_code', $order_detail->item_code)->with(['itemUnit' => function($q)
+                    {
+                        $q->withoutGlobalScope(ActiveScope::class);
 
-
-
-
-                // ❖ نحدد النوع (استهلاكي / مخزني)
-                $is_item_found = ItemBatch::where('store_id', $this->order->store_id)
-                    ->where('item_code', $order_detail->item_code)
-                    ->where('item_cost_price', $order_detail->unit_price)
-                    ->where('item_unit_id', $order_detail->item_units_id);
+                    }])->first();
+                    $get_parent_item_unit = $get_item->itemUnit->name;
 
 
-                if ($order_detail->item_type == '1')
-                { // استهلاكي
-                    $is_item_found = $is_item_found
-                        // ->where('production_date', $order_detail->production_date)
-                        ->where('expire_date', $order_detail->expire_date)
-                        ->first();
-                        // dd($is_item_found);
-                } else
-                {
-                    $is_item_found = $is_item_found->first();
-                }
-                // ❖ لو الصنف موجود مسبقًا
-                if (!empty($is_item_found))
-                {
-                    $converted_qty = $order_detail->is_master == 'master'
-                        ? $order_detail->qty
-                        : $order_detail->qty / $order_detail->item->qty_sub_item_unit;
 
-                    $is_item_found->qty           += $converted_qty;
-                    // $is_item_found->deduction     += $converted_qty;    /////////
-                    $is_item_found->deduction     += 0;    /////////
-                    $is_item_found->total         += $order_detail->total;
-                    $is_item_found->updated_by     = auth()->user()->id;
 
-                    $is_item_found->save();
-                } else
-                {
-                    $converted_qty = $order_detail->is_master == 'master'
-                        ? $order_detail->qty
-                        : $order_detail->qty / $order_detail->item->qty_sub_item_unit;
-                    $this->item_batch                  = new ItemBatch();
-                    $this->item_batch->qty             = $converted_qty;
-                    $this->item_batch->deduction       += 0;
-                    $this->item_batch->store_id        = $order_detail->store_id;
-                    $this->item_batch->item_code       = $order_detail->item_code;
-                    $this->item_batch->item_unit_id    = $order_detail->item_units_id;
-                    $this->item_batch->item_cost_price = $order_detail->unit_price;
-                    $this->item_batch->total           = $order_detail->total;
+                    // ❖ نحدد النوع (استهلاكي / مخزني)
+                    $is_item_found = ItemBatch::where('store_id', $this->order->store_id)
+                        ->where('item_code', $order_detail->item_code)
+                        ->where('item_cost_price', $order_detail->unit_price)
+                        ->where('item_unit_id', $order_detail->item_units_id);
+
 
                     if ($order_detail->item_type == '1')
+                    { // استهلاكي
+                        $is_item_found = $is_item_found
+                            // ->where('production_date', $order_detail->production_date)
+                            ->where('expire_date', $order_detail->expire_date)
+                            ->first();
+                            // dd($is_item_found);
+                    } else
                     {
-                        $this->item_batch->production_date = $order_detail->production_date;
-                        $this->item_batch->expire_date     = $order_detail->expire_date;
+                        $is_item_found = $is_item_found->first();
                     }
-
-                    $this->item_batch->auto_serial   = get_last_autoSerial_invoices(ItemBatch::class, 'auto_serial');
-                    $this->item_batch->company_code  = auth()->user()->company_code;
-                    $this->item_batch->created_by    = auth()->user()->id;
-                    $this->item_batch->updated_by    = auth()->user()->id;
-
-                    $this->item_batch->save();
-
-
-                    // UPDATE SAES ORDER DETAILES TABLE
-                    $order_detail->batch_id = $this->item_batch->auto_serial;
-                    $order_detail->save();
-
-
-                }
-
-
-                // 5 -- UPDATE ITEM CARD MOVEMENTS TABLE تعديل جدول حركة الصنف *******************************
-                    // ❖ نحسب الكمية بعد الإضافة
-                    $qty_after_all_stores = ItemBatch::where('item_code', $order_detail->item_code)->selectRaw('SUM(qty - deduction) as total')->value('total');
-
-                    $qty_after_this_store = ItemBatch::where('item_code', $order_detail->item_code)
-                                ->where('store_id', $order_detail->store_id)
-                                ->selectRaw('SUM(qty - deduction) as total')->value('total');
-
-                    // ❖ نجهز حركة الصنف
-                    $create_item_movement = new ItemCardMovement();
-                    $create_item_movement->item_code                        = $order_detail->item_code;
-                    $create_item_movement->store_id                         = $order_detail->store_id;
-                    $create_item_movement->item_card_movements_category_id  = $this->itemCardMoveCategory->id;
-                    $create_item_movement->item_card_movements_type_id      = $this->itemCardMoveType->id;
+                    // ❖ لو الصنف موجود مسبقًا
                     if (!empty($is_item_found))
                     {
-                        $create_item_movement->item_batch_id                = $is_item_found->auto_serial;
+                        $converted_qty = $order_detail->is_master == 'master'
+                            ? $order_detail->qty
+                            : $order_detail->qty / $order_detail->item->qty_sub_item_unit;
 
-                    }else
+                        $is_item_found->qty           += $converted_qty;
+                        // $is_item_found->deduction     += $converted_qty;    /////////
+                        $is_item_found->deduction     += 0;    /////////
+                        $is_item_found->total         += $order_detail->total;
+                        $is_item_found->updated_by     = auth()->user()->id;
+
+                        $is_item_found->save();
+                    } else
                     {
-                        $create_item_movement->item_batch_id                = $this->item_batch->auto_serial;
+                        $converted_qty = $order_detail->is_master == 'master'
+                            ? $order_detail->qty
+                            : $order_detail->qty / $order_detail->item->qty_sub_item_unit;
+                        $this->item_batch                  = new ItemBatch();
+                        $this->item_batch->qty             = $converted_qty;
+                        $this->item_batch->deduction       += 0;
+                        $this->item_batch->store_id        = $order_detail->store_id;
+                        $this->item_batch->item_code       = $order_detail->item_code;
+                        $this->item_batch->item_unit_id    = $order_detail->item_units_id;
+                        $this->item_batch->item_cost_price = $order_detail->unit_price;
+                        $this->item_batch->total           = $order_detail->total;
+
+                        if ($order_detail->item_type == '1')
+                        {
+                            $this->item_batch->production_date = $order_detail->production_date;
+                            $this->item_batch->expire_date     = $order_detail->expire_date;
+                        }
+
+                        $this->item_batch->auto_serial   = get_last_autoSerial_invoices(ItemBatch::class, 'auto_serial');
+                        $this->item_batch->company_code  = auth()->user()->company_code;
+                        $this->item_batch->created_by    = auth()->user()->id;
+                        $this->item_batch->updated_by    = auth()->user()->id;
+
+                        $this->item_batch->save();
+
+
+                        // UPDATE SAES ORDER DETAILES TABLE
+                        $order_detail->batch_id = $this->item_batch->auto_serial;
+                        $order_detail->save();
+
+
                     }
-                    $create_item_movement->sales_order_id                   = $this->order->auto_serial;
-                    $create_item_movement->sales_orderdetiles__id           = $order_detail->id;
-                    $create_item_movement->qty_before_movement              = $qty_before_all_stores;
-                    $create_item_movement->qty_after_movement               = $qty_after_all_stores;
-                    $create_item_movement->qty_before_movement_in_store     = $qty_before_this_store;
-                    $create_item_movement->qty_after_movement_in_store      = $qty_after_this_store;
-                    $create_item_movement->notes                            = $this->order->notes;
-                    $create_item_movement->date                             = Carbon::now();
-                    $create_item_movement->company_code                     = auth()->user()->company_code;
-                    $create_item_movement->created_by                       = auth()->user()->id;
-                    $create_item_movement->updated_by                       = auth()->user()->id;
 
-                    $create_item_movement->save();
 
-            }
+                    // 5 -- UPDATE ITEM CARD MOVEMENTS TABLE تعديل جدول حركة الصنف *******************************
+                        // ❖ نحسب الكمية بعد الإضافة
+                        $qty_after_all_stores = ItemBatch::where('item_code', $order_detail->item_code)->selectRaw('SUM(qty - deduction) as total')->value('total');
+
+                        $qty_after_this_store = ItemBatch::where('item_code', $order_detail->item_code)
+                                    ->where('store_id', $order_detail->store_id)
+                                    ->selectRaw('SUM(qty - deduction) as total')->value('total');
+
+                        // ❖ نجهز حركة الصنف
+                        $create_item_movement = new ItemCardMovement();
+                        $create_item_movement->item_code                        = $order_detail->item_code;
+                        $create_item_movement->store_id                         = $order_detail->store_id;
+                        $create_item_movement->item_card_movements_category_id  = $this->itemCardMoveCategory->id;
+                        $create_item_movement->item_card_movements_type_id      = $this->itemCardMoveType->id;
+                        if (!empty($is_item_found))
+                        {
+                            $create_item_movement->item_batch_id                = $is_item_found->auto_serial;
+
+                        }else
+                        {
+                            $create_item_movement->item_batch_id                = $this->item_batch->auto_serial;
+                        }
+                        $create_item_movement->sales_order_id                   = $this->order->auto_serial;
+                        $create_item_movement->sales_orderdetiles__id           = $order_detail->id;
+                        $create_item_movement->qty_before_movement              = $qty_before_all_stores;
+                        $create_item_movement->qty_after_movement               = $qty_after_all_stores;
+                        $create_item_movement->qty_before_movement_in_store     = $qty_before_this_store;
+                        $create_item_movement->qty_after_movement_in_store      = $qty_after_this_store;
+                        $create_item_movement->notes                            = $this->order->notes;
+                        $create_item_movement->date                             = Carbon::now();
+                        $create_item_movement->company_code                     = auth()->user()->company_code;
+                        $create_item_movement->created_by                       = auth()->user()->id;
+                        $create_item_movement->updated_by                       = auth()->user()->id;
+
+                        $create_item_movement->save();
+
+                }
 
 
 
