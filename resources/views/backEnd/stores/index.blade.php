@@ -19,6 +19,9 @@
         @livewire('back-end.stores.update')
         @livewire('back-end.stores.delete')
 
+
+       
+
     </section>
     <!-- /.content -->
 

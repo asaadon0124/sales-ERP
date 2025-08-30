@@ -7,6 +7,7 @@ use App\Models\ItemUnit;
 use App\Models\ActionHistory;
 use App\Models\Scopes\ActiveScope;
 use Illuminate\Support\Facades\DB;
+use App\Services\ActionHistoryService;
 use App\Livewire\BackEnd\ItemUnits\SoftDelete;
 
 class Restore extends Component
@@ -26,7 +27,7 @@ class Restore extends Component
     }
 
 
-    public function submit()
+    public function submit(ActionHistoryService $action_history)
     {
         if (!auth()->user()->can('تفعيل وحدة الصنف'))
         {
@@ -34,32 +35,38 @@ class Restore extends Component
         }
 
 
-         //  dd($this->active_shift);
-        if ($this->itemUnit)
+        try
         {
-            DB::beginTransaction();
-            $this->itemUnit->status = 'active';
-            $this->itemUnit->save();
+             //  dd($this->active_shift);
+            if ($this->itemUnit)
+            {
+                DB::beginTransaction();
+                $this->itemUnit->status = 'active';
+                $this->itemUnit->save();
 
-             // 2 - CREATE ACTION HISTORY TABLE *****************
-            $actionHistory              = new ActionHistory();
-            $actionHistory->title       = "تفعيل وحدة صنف  ";
-            $actionHistory->desc        = "تفعيل وحدة صنف  {$this->itemUnit->name}" ;
-            $actionHistory->table_name  = 'ItemUnit';
-            $actionHistory->row_id      = $this->itemUnit->id;
-            $actionHistory->created_by  = auth()->user()->id;
-            $actionHistory->save();
-            DB::commit();
-            DB::rollBack();
-            // Dispatch events
-            $this->dispatch('ItemUnitsRestoreMS');
-            $this->dispatch('restoreModalToggle');
-        }else
+
+
+                // 2 - CREATE ACTION HISTORY TABLE *****************
+                $action_history->action('تفعيل وحدة الصنف   ', "تفعيل وحدة الصنف   {$this->itemUnit->name}", 'ItemUnit', $this->itemUnit->id,auth()->user()->id);
+                DB::commit();
+
+                // Dispatch events
+                $this->dispatch('ItemUnitsRestoreMS');
+            }else
+            {
+                DB::rollBack();
+                // dd($this->active_shift);
+                $this->dispatch('ItemUnitsValidationMS');
+
+            }
+        } catch (\Throwable $th)
         {
-            // dd($this->active_shift);
-           $this->dispatch('ItemUnitsValidationMS');
-           $this->dispatch('restoreModalToggle');
+            //throw $th;
         }
+
+
+
+        $this->dispatch('restoreModalToggle');
         $this->dispatch('refreshData')->to(SoftDelete::class);
     }
 

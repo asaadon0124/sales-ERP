@@ -33,6 +33,33 @@ class Treasuries extends Model
      }
 
 
+     public function canBeDeleted()
+     {
+         // لو الخزنة نفسها فيها أي شيفتات (قديمة أو مفتوحة)
+         if ($this->shifts()->exists())
+         {
+             return false;
+         }
+
+         // لو الخزنة رئيسية
+         if ($this->is_master === 'master')
+         {
+             // لو أي خزنة فرعية ليها شيفتات
+            //  $subHasShifts = $this->subTreasuries()->whereHas('shifts')->exists();
+            //  if ($subHasShifts) {
+            //      return false;
+            //  }
+
+            if ($this->subTreasuries()->exists())
+            {
+                return false;
+            }
+
+         }
+
+         // لو خزنة فرعية: الشرط الوحيد انها ما يكونش ليها شيفتات
+         return true;
+     }
 
 
 
@@ -42,7 +69,7 @@ class Treasuries extends Model
      }
 
 
-   
+
 
      public function admins()
 {

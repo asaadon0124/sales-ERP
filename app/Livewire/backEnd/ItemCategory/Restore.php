@@ -7,6 +7,7 @@ use App\Models\ItemCategory;
 use App\Models\ActionHistory;
 use App\Models\Scopes\ActiveScope;
 use Illuminate\Support\Facades\DB;
+use App\Services\ActionHistoryService;
 use App\Livewire\BackEnd\ItemCategory\SoftDelete;
 
 class Restore extends Component
@@ -28,43 +29,50 @@ class Restore extends Component
     }
 
 
-    public function submit()
+    public function submit(ActionHistoryService $action_history)
     {
         if (!auth()->user()->can('تفعيل فئة الصنف'))
         {
             abort(403, 'ليس لديك صلاحية اعادة تفعيل فئة الصنف');
         }
 
-
-        if ($this->itemCategory)
+        try
         {
-            DB::beginTransaction();
+            if ($this->itemCategory)
+            {
+                DB::beginTransaction();
 
-            $this->itemCategory->status = 'active';
-            $this->itemCategory->save();
+                $this->itemCategory->status = 'active';
+                $this->itemCategory->save();
 
 
-             // 2 - CREATE ACTION HISTORY TABLE *****************
-            $actionHistory              = new ActionHistory();
-            $actionHistory->title       = 'تفعيل فئة الصنف  ';
-            $actionHistory->desc        = "تفعيل فئة الصنف {$this->itemCategory->name}";
-            $actionHistory->table_name  = 'ItemCategory';
-            $actionHistory->row_id      = $this->itemCategory->id;
-            $actionHistory->created_by  = auth()->user()->id;
-            $actionHistory->save();
 
-            DB::commit();
+
+                 // 2 - CREATE ACTION HISTORY TABLE *****************
+                 $action_history->action('تفعيل فئة الصنف   ', "تفعيل فئة الصنف   {$this->itemCategory->name}", 'ItemCategory', $this->itemCategory->id,auth()->user()->id);
+
+                DB::commit();
+
+                // Dispatch events
+                $this->dispatch('itemcategoryRestoreMS');
+                $this->dispatch('restoreModalToggle');
+            }else
+            {
+                // dd($this->active_shift);
+               $this->dispatch('itemCategoriesValidationMS');
+               $this->dispatch('restoreModalToggle');
+            }
+
+        } catch (\Throwable $th)
+        {
             DB::rollBack();
-            // Dispatch events
-            $this->dispatch('itemcategoryRestoreMS');
+            $this->dispatch('itemCategoriesValidationMS');
             $this->dispatch('restoreModalToggle');
-        }else
-        {
-            // dd($this->active_shift);
-           $this->dispatch('itemCategoriesValidationMS');
-           $this->dispatch('restoreModalToggle');
         }
+
         $this->dispatch('refreshData')->to(SoftDelete::class);
+
+
     }
 
 

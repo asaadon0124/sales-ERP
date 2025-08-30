@@ -99,6 +99,7 @@ class Create extends Component
         });
 
 
+        // dd($this->items);
         $this->customer             = Customer::where('customer_code', $this->order->customer_code)->first();
         $this->customer_account     = $this->customer->customer_account;
         $this->servant              = Servant::where('servant_code',$this->order->servant_code)->with('account_customer')->first();
@@ -173,16 +174,21 @@ class Create extends Component
                     $q2->where('order_type','0');
                 });
             }], 'qty')->first();
+            // dd($this->item_selected_detailes);
 
             if ($this->item_selected_detailes)
             {
-                $this->item_is_change          = $this->item_selected_detailes->is_change;
 
-                $items = $this->order->order_detailes->where('item_code', $this->item_selected_detailes->item_code);
+                $items = SalesOrderDetail::where('item_code',$this->item_selected_detailes->item_code)->whereHas('order',function($q)
+                {
+                    $q->where('customer_code',$this->customer->customer_code)->where('order_type','2');
+                })->get();
 
+                // dd($items->pluck('is_master'));
                 // الكمية بالوحدة الأساسية
                 $used_qty_master = $items->where('is_master', 'master')->sum('qty');
 
+                // dd($used_qty_master);
                 // الكمية بالوحدة الفرعية محولة للأساسية
                 $used_qty_sub_master = $items->where('is_master', 'sub_master')->sum('qty') / ($this->item_selected_detailes->qty_sub_item_unit ?: 1);
 
@@ -223,7 +229,6 @@ class Create extends Component
         $this->stores               = Store::all();
         $this->total_qty_sold       = $this->check_itemUnit_type->is_master == 'master' ? $this->total_qty_sold : $this->total_qty_sold * $this->item_selected_detailes->qty_sub_item_unit;
 
-//   dd($this->total_qty_sold);
     }
 
 

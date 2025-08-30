@@ -13,12 +13,21 @@ class Data extends Component
     use WithPagination;
     protected $listeners = ['refreshData' => '$refresh'];
     public $search;
+    public $has_shift_history = false;
 
     public function updatingSearch()
     {
         $this->resetPage();
     }
 
+
+
+ 
+
+    // public function mount()
+    // {
+    //     $shifts = Shift::where('treasury_id',)
+    // }
 
 // public function render()
 // {
@@ -68,7 +77,7 @@ class Data extends Component
                 $query->orWhere('is_master', 'like', '%user%');
             }
         })
-        ->latest()
+        ->latest()->with('shifts')
         ->paginate(10);
 
         // $data = Treasuries::where(function ($query)

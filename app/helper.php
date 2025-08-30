@@ -110,7 +110,16 @@ function total_cost_after_all($order)
 // الخزن الي ليها شفتات مفتوحة
  function treasures_with_Active_shifts($treasury_id)
  {
-    return Shift::where('treasury_id',$treasury_id)->with('treasury')->where('shift_status','active')->where('company_code',auth()->user()->company_code)->first();
+    // return Shift::where('treasury_id',$treasury_id)->with('treasury')->where('shift_status','active')->where('company_code',auth()->user()->company_code)->first();
+    return Shift::where('treasury_id', $treasury_id)
+    ->where('company_code', auth()->user()->company_code)
+    ->where(function($q) {
+        $q->where('shift_status', 'active')
+          ->orWhere('is_delevered_review', 'no');
+    })
+    ->with('treasury')
+    ->first();
+
  }
 
 

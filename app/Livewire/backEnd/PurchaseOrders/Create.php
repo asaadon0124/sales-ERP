@@ -92,7 +92,7 @@ class Create extends Component
 
         try
         {
-              DB::beginTransaction();
+            DB::beginTransaction();
             // dd($this->all());
             $this->order = new PurchaseOrder();
 

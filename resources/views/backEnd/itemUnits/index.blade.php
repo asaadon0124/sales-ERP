@@ -102,7 +102,7 @@
 
         Livewire.on('ItemUnitsValidationMS', function()
         {
-            toastr.error('هذه الوحدة غير موجودة', 'رسالة خطا', { timeOut: 5000 });
+            toastr.error('يجب ان تكون الاصناف داخل الوحدة = 0', 'رسالة خطا', { timeOut: 5000 });
         });
 
 

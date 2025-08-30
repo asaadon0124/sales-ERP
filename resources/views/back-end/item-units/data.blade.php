@@ -91,7 +91,7 @@
 
     <div class=" mt-2">
         @can('حذف وحدة الصنف')
-            <p style="color: rebeccapurple"><span style="color: red">ملحوظة</span> عند الحذف سيتم حذف الوحدة اذاكانت لا تحتوي علي اصناف او الاصناف بداخلها كمياتها  ==  0 </p>
+            <p style="color: rebeccapurple"><span style="color: red">ملحوظة</span> عند الحذف سيتم حذف الوحدة مع الاصناف التي بداخلها اذاكانت لا تحتوي علي اصناف او الاصناف بداخلها كمياتها  ==  0 </p>
         @endcan
         {{ $data->links() }}
     </div>

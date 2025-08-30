@@ -24,8 +24,15 @@ class Delete extends Component
     {
         $this->itemId       = $id;
         $this->treasury     = Treasuries::select('id','name','status')->whereDoesntHave('treasuriesDetailes')->where('id',$this->itemId)->first();
-        $this->active_shift = Shift::where('treasury_id',$id)->with('treasury')->where('shift_status','active')->orWhere('is_delevered_review','no')->count();
-
+        // $this->active_shift = Shift::where('treasury_id',$id)->with('treasury')->where('shift_status','active')->orWhere('is_delevered_review','no')->get();
+        $this->active_shift = Shift::where('treasury_id', $id)
+        ->with('treasury')
+        ->where(function($q)
+        {
+            $q->where('shift_status', 'active')
+              ->orWhere('is_delevered_review', 'no');
+        })
+        ->count();
         // show Create modal
         $this->dispatch('deleteModalToggle');
     }

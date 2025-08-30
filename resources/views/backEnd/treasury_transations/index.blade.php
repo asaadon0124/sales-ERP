@@ -21,9 +21,6 @@
         @livewire('back-end.treasury-transation.data')
         @livewire('back-end.treasury-transation.delete')
         @livewire('back-end.treasury-transation.show')
-
-
-        {{-- @livewire('back-end.Items.show') --}}
     </section>
     <!-- /.content -->
 

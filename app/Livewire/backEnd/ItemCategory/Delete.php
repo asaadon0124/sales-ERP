@@ -7,6 +7,7 @@ use App\Models\ItemBatch;
 use App\Models\ItemCategory;
 use App\Models\ActionHistory;
 use Illuminate\Support\Facades\DB;
+use App\Services\ActionHistoryService;
 use App\Livewire\BackEnd\ItemCategory\Data;
 
 class Delete extends Component
@@ -37,65 +38,81 @@ class Delete extends Component
     }
 
 
-    public function submit()
+    public function submit(ActionHistoryService $action_history)
     {
-        if (!auth()->user()->can('حذف فئة الصنف'))
-        {
+        if (!auth()->user()->can('حذف فئة الصنف')) {
             abort(403, 'ليس لديك صلاحية حذف فئة الصنف');
         }
 
+        if (!$this->itemCategory) {
+            $this->dispatch('itemCategoriesValidationMS');
+            $this->dispatch('deleteModalToggle');
+            return;
+        }
 
-        if ($this->itemCategory)
-        {
-            if (    // لو فيها اصناف و كميات الاصناف دي  == 0
-                    $this->itemCategory->items->count() > 0 &&
-                    $this->itemCategory->items->every(function ($item)
-                    {
-                        return $item->item_batches->sum('qty') == 0;
-                    })
-                )
-            {
-                dd('كل كميات الاصناف == 0');
+        // لو فيها أصناف
+        if ($this->itemCategory->items->count() > 0) {
 
+            // كل الأصناف كمياتها = 0
+            if ($this->itemCategory->items->every(fn($item) => $item->item_batches->sum('qty') == 0)) {
 
-            } elseif($this->itemCategory->items->count() == 0)      // لو مفيهاش اصناف
-            {
                 DB::beginTransaction();
+                try {
+                    // 1- تعطيل كل الأصناف
+                    $this->itemCategory->items()->update(['status' => 'un_active']);
 
-                    // 1 - DELETE ITEM CATEGORY TABLE *****************
-                    $this->itemCategory->status = 'un_active';
-                    $this->itemCategory->save();
+                    // 2- تعطيل فئة الصنف
+                    $this->itemCategory->update(['status' => 'un_active']);
 
-                    // 2 - CREATE ACTION HISTORY TABLE *****************
-                    $actionHistory              = new ActionHistory();
-                    $actionHistory->title       = 'حذف فئة الصنف  ';
-                    $actionHistory->desc        = "حذف فئة الصنف {$this->itemCategory->name}";
-                    $actionHistory->table_name  = 'ItemCategory';
-                    $actionHistory->row_id      = $this->itemCategory->id;
-                    $actionHistory->created_by  = auth()->user()->id;
-                    $actionHistory->save();
+                    // 3- إضافة Action History
+                    $action_history->action(
+                        'حذف فئة الصنف',
+                        "حذف فئة الصنف {$this->itemCategory->name}",
+                        'ItemCategory',
+                        $this->itemCategory->id,
+                        auth()->id()
+                    );
 
-                DB::commit();
+                    DB::commit();
+                    $this->dispatch('deleteModalToggle');
+                } catch (\Throwable $e) {
+                    DB::rollBack();
+                    throw $e;
+                }
 
-            }else
-            {
+            } else {
+                // فيها أصناف وكمياتها > 0
                 $this->dispatch('itemCategoriesValidationMS');
                 $this->dispatch('deleteModalToggle');
             }
 
+        } else {
+            // لو مفيهاش أصناف خالص
+            DB::beginTransaction();
+            try {
+                $this->itemCategory->update(['status' => 'un_active']);
 
-            DB::rollBack();
-            // Dispatch events
-            $this->dispatch('itemCategoriesDeleteMS');
-            $this->dispatch('deleteModalToggle');
-        }else
-        {
-            // dd($this->active_shift);
-           $this->dispatch('itemCategoriesValidationMS');
-           $this->dispatch('deleteModalToggle');
+                $action_history->action(
+                    'حذف فئة الصنف',
+                    "حذف فئة الصنف {$this->itemCategory->name}",
+                    'ItemCategory',
+                    $this->itemCategory->id,
+                    auth()->id()
+                );
+
+                DB::commit();
+                $this->dispatch('itemCategoriesDeleteMS');
+                $this->dispatch('deleteModalToggle');
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                throw $e;
+            }
         }
+
+        // Refresh Data
         $this->dispatch('refreshData')->to(Data::class);
     }
+
 
 
 

@@ -114,12 +114,13 @@ class Data extends Component
             'moveType_id.exists'   => 'اسم الحركة غير موجود.',
         ]);
 
-
-        DB::beginTransaction();
+        try
+        {
+            DB::beginTransaction();
 
                 if ($this->account->account_customer != null)           // مورد
                 {
-                   $this->account_balance_before    = $updateAccountBalance->getCurrentBalance($this->account_id,'supplier','supplier_account');
+                $this->account_balance_before    = $updateAccountBalance->getCurrentBalance($this->account_id,'supplier','supplier_account');
 
                 }elseif($this->account->account_customer2 != null)      // عميل
                 {
@@ -133,128 +134,139 @@ class Data extends Component
                     $this->account_balance_before    =  $updateAccountBalance->getCurrentBalance($this->account_id,'general','');
                 }
 
-            // 1 - انشاء جدول حركة الخزن TREASURY TRANSATIONS ***************************************
+
+              // 1 - انشاء جدول حركة الخزن TREASURY TRANSATIONS ***************************************
                 $create = TreasuryTransation::create(
-                [
-                    'treasury_id'     => $this->treasury_id,
-                    'shift_id'        => $this->get_active_shift->auto_serial,
-                    'moveType_id'     => $this->moveType_id,
-                    'cash_amount'     => $this->cash_amount,
-                    'cash_for_account'=> $this->cash_amount,
-                    'account_id'      => $this->account_id,
-                    'invoice_type_accounts'  => $this->invoice_type_accounts,
-                    'auto_serial'     => get_last_autoSerial_invoices(TreasuryTransation::class,'auto_serial'),
-                    'isal_number'     => $this->treasry->last_recept_recive + 1,
-                    'account_balance_before'    =>  $this->account_balance_before,
-                    'cash_source_type'=> 'account',
-                    'is_approve'      => 'approve',
-                    'move_date'       => $this->move_date,
-                    'notes'           => $this->notes,
-                    'company_code'    => auth()->user()->company_code,
-                    'created_by'      => auth()->user()->id,
-                    'updated_by'      => auth()->user()->id,
-                ]);
+                    [
+                        'treasury_id'     => $this->treasury_id,
+                        'shift_id'        => $this->get_active_shift->auto_serial,
+                        'moveType_id'     => $this->moveType_id,
+                        'cash_amount'     => $this->cash_amount,
+                        'cash_for_account'=> $this->cash_amount,
+                        'account_id'      => $this->account_id,
+                        'invoice_type_accounts'  => $this->invoice_type_accounts,
+                        'auto_serial'     => get_last_autoSerial_invoices(TreasuryTransation::class,'auto_serial'),
+                        'isal_number'     => $this->treasry->last_recept_recive + 1,
+                        'account_balance_before'    =>  $this->account_balance_before,
+                        'cash_source_type'=> 'account',
+                        'is_approve'      => 'approve',
+                        'move_date'       => $this->move_date,
+                        'notes'           => $this->notes,
+                        'company_code'    => auth()->user()->company_code,
+                        'created_by'      => auth()->user()->id,
+                        'updated_by'      => auth()->user()->id,
+                    ]);
 
 
                 if ($this->account->accountType->name == 'مندوب')
                 {
-                    $create->servant_cash_amount = $this->cash_amount;
-                    $create->servant_account_id = $this->account->account_number;
+                    $create->servant_cash_amount            = $this->cash_amount;
+                    $create->account_balance_servant_before = $this->account_balance_before;
+                    $create->servant_account_id             = $this->account->account_number;
                     $create->save();
                 }
 
-        // 2 - تعديل جدول الخزن TREASURES ***************************************
-            $this->treasry->update(
-            [
-                'last_recept_recive' => $create->isal_number
-            ]);
+              // 2 - تعديل جدول الخزن TREASURES ***************************************
+                $this->treasry->update(
+                [
+                    'last_recept_recive' => $create->isal_number
+                ]);
 
-            $this->treasury_balance = $this->treasury_balance + $this->cash_amount;
+                $this->treasury_balance = $this->treasury_balance + $this->cash_amount;
 
-        // 3 - تعديل جدول العملاء او الموردين او المناديب او موظفSUPPLIER OR CUSTOMERS SERVANTS ***************************************
-            if ($this->account->account_customer != null)           // مورد
-            {
-                // dd('supplier');
-                $this->account->account_customer->current_balance   = $updateAccountBalance->getCurrentBalance($create->account_id,'supplier','supplier_account');
-                $this->account->account_customer->save();
+              // 3 - تعديل جدول العملاء او الموردين او المناديب او موظفSUPPLIER OR CUSTOMERS SERVANTS ***************************************
+                if ($this->account->account_customer != null)           // مورد
+                {
+                    // dd('supplier');
+                    $this->account->account_customer->current_balance   = $updateAccountBalance->getCurrentBalance($create->account_id,'supplier','supplier_account');
+                    $this->account->account_customer->save();
 
-                $this->account->current_balance                     = $updateAccountBalance->getCurrentBalance($create->account_id,'supplier','supplier_account');
-                $this->account->save();
+                    $this->account->current_balance                     = $updateAccountBalance->getCurrentBalance($create->account_id,'supplier','supplier_account');
+                    $this->account->save();
 
-                $create->account_type           = 'suppliers';
-                $create->account_balance_after  = $updateAccountBalance->getCurrentBalance($create->account_id,'supplier','supplier_account');
-                $create->save();
-
-
-            }elseif($this->account->account_customer2 != null)      // عميل
-            {
-                //  dd('customer');
-                $this->account->account_customer2->current_balance   = $updateAccountBalance->getCurrentBalance($create->account_id,'customer','account_customer2');
-                $this->account->account_customer2->save();
-
-                $this->account->current_balance                     = $updateAccountBalance->getCurrentBalance($create->account_id,'customer','account_customer2');
-                $this->account->save();
-
-                $create->account_type           = 'customers';
-                $create->account_balance_after  = $updateAccountBalance->getCurrentBalance($create->account_id,'customer','account_customer2');
-                $create->save();
-
-            }elseif($this->account->account_servant != null)        // مندوب
-            {
-                // servant
-                $this->account->account_servant->current_balance   = $updateAccountBalance->getCurrentBalance($create->account_id,'servant','account_servant');
-                $this->account->account_servant->save();
-
-                $this->account->current_balance                     = $updateAccountBalance->getCurrentBalance($create->account_id,'servant','account_servant');
-                $this->account->save();
-
-                $create->account_type           = 'servants';
-                $create->account_balance_after  = $updateAccountBalance->getCurrentBalance($create->account_id,'servant','account_servant');
-                $create->save();
-
-            }elseif($this->account->account_employee != null)       // موظف
-            {
-                //  dd('employee');
-                // $this->account->account_employee->current_balance   = getCoustomerCurrentBalance($create->account_id,'account_employee');
-                $this->account->account_employee->current_balance   = $updateAccountBalance->getCurrentBalance($create->account_id,'employee','account_employee');
-                $this->account->account_employee->save();
-
-                // $this->account->current_balance                     = getCoustomerCurrentBalance($create->account_id,'account_employee');
-                $this->account->current_balance                     = $updateAccountBalance->getCurrentBalance($create->account_id,'employee','account_employee');
-                $this->account->save();
-
-                $create->account_type           = 'employee';
-                $create->account_balance_after  = $updateAccountBalance->getCurrentBalance($create->account_id,'employee','account_employee');
-                $create->save();
-
-            }else                                                   // حساب فقط
-            {
-                // dd('ds');
-                // $this->account->current_balance                     = getCoustomerCurrentBalance($create->account_id,'account_employee');
-                $this->account->current_balance                     = $updateAccountBalance->getCurrentBalance($create->account_id,'general','');
-                $this->account->save();
-
-                $create->account_type           = 'general';
-                $create->account_balance_after  = $updateAccountBalance->getCurrentBalance($create->account_id,'general','');
-                $create->save();
-            }
+                    $create->account_type           = 'suppliers';
+                    $create->account_balance_after  = $updateAccountBalance->getCurrentBalance($create->account_id,'supplier','supplier_account');
+                    $create->save();
 
 
+                }elseif($this->account->account_customer2 != null)      // عميل
+                {
+                    //  dd('customer');
+                    $this->account->account_customer2->current_balance   = $updateAccountBalance->getCurrentBalance($create->account_id,'customer','account_customer2');
+                    $this->account->account_customer2->save();
 
-//  dd($create);
+                    $this->account->current_balance                     = $updateAccountBalance->getCurrentBalance($create->account_id,'customer','account_customer2');
+                    $this->account->save();
 
-        // 4 - CREATE ACTION HISTORY TABLE *****************
-            $action_history->action('اضافة تحصيل ', "اضافة تحصيل {$create->notes}", 'TreasuryTransaction', $create->id,auth()->user()->id);
+                    $create->account_type           = 'customers';
+                    $create->account_balance_after  = $updateAccountBalance->getCurrentBalance($create->account_id,'customer','account_customer2');
+                    $create->save();
 
-        DB::commit();
-        $this->reset(['cash_amount','move_date','notes']);
+                }elseif($this->account->account_servant != null)        // مندوب
+                {
+                    // servant
+                    $this->account->account_servant->current_balance   = $updateAccountBalance->getCurrentBalance($create->account_id,'servant','account_servant');
+                    $this->account->account_servant->save();
 
-        // Dispatch events to update UI
-        $this->dispatch('treasury_transationsCreateMS');
-        $this->dispatch('createModalToggle');
-        $this->dispatch('refreshData')->to(Data::class);
+                    $this->account->current_balance                     = $updateAccountBalance->getCurrentBalance($create->account_id,'servant','account_servant');
+                    $this->account->save();
 
-        DB::rollBack();
+                    $create->account_type                   = 'servants';
+                    $create->account_balance_after          = $updateAccountBalance->getCurrentBalance($create->account_id,'servant','account_servant');
+                    $create->account_balance_servant_after  = $updateAccountBalance->getCurrentBalance($create->account_id,'servant','account_servant');
+                    $create->save();
+
+                }elseif($this->account->account_employee != null)       // موظف
+                {
+                    //  dd('employee');
+                    // $this->account->account_employee->current_balance   = getCoustomerCurrentBalance($create->account_id,'account_employee');
+                    $this->account->account_employee->current_balance   = $updateAccountBalance->getCurrentBalance($create->account_id,'employee','account_employee');
+                    $this->account->account_employee->save();
+
+                    // $this->account->current_balance                     = getCoustomerCurrentBalance($create->account_id,'account_employee');
+                    $this->account->current_balance                     = $updateAccountBalance->getCurrentBalance($create->account_id,'employee','account_employee');
+                    $this->account->save();
+
+                    $create->account_type           = 'employee';
+                    $create->account_balance_after  = $updateAccountBalance->getCurrentBalance($create->account_id,'employee','account_employee');
+                    $create->save();
+
+                }else                                                   // حساب فقط
+                {
+                    // dd('ds');
+                    // $this->account->current_balance                     = getCoustomerCurrentBalance($create->account_id,'account_employee');
+                    $this->account->current_balance                     = $updateAccountBalance->getCurrentBalance($create->account_id,'general','');
+                    $this->account->save();
+
+                    $create->account_type           = 'general';
+                    $create->account_balance_after  = $updateAccountBalance->getCurrentBalance($create->account_id,'general','');
+                    $create->save();
+                }
+
+
+
+
+              // 4 - CREATE ACTION HISTORY TABLE *****************
+                $action_history->action('اضافة تحصيل ', "اضافة تحصيل {$create->notes}", 'TreasuryTransaction', $create->id,auth()->user()->id);
+
+            DB::commit();
+            $this->reset(['cash_amount','move_date','notes']);
+
+            // Dispatch events to update UI
+            $this->dispatch('treasury_transationsCreateMS');
+            $this->dispatch('createModalToggle');
+            $this->dispatch('refreshData')->to(Data::class);
+
+        } catch (\Throwable $th)
+        {
+            DB::rollBack();
+            $this->dispatch('treasury_transationsErrorMS');
+            throw $th;
+        }
+
+
+
+
     }
 
 

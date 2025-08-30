@@ -236,8 +236,12 @@
         <div class="login-container">
             <div class="circle circle-one"></div>
             <div class="form-container">
-                <img src="https://raw.githubusercontent.com/hicodersofficial/glassmorphism-login-form/master/assets/illustration.png"
-                    alt="illustration" class="illustration" />
+                {{-- <img src="https://raw.githubusercontent.com/hicodersofficial/glassmorphism-login-form/master/assets/illustration.png"
+                    alt="illustration" class="illustration" /> --}}
+                    <div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+                        <img src="{{ asset('assets/backEnd/images/erpsystem_logo.jpg') }}" alt="" style="height: 100px; border-radius: 50%;">
+
+                    </div>
                 <h1 class="opacity">LOGIN</h1>
                <form action="{{ route('backEnd.makeLogin') }}" method="post">
         @csrf

@@ -148,7 +148,9 @@
                                             <td>{{ Treasries_balances($item->treasurie->id) }}</td>
                                             <td>{{ $item->treasurie->company_code }}</td>
                                             <td>
-                                                @if (empty(treasures_with_Active_shifts($item->id)))
+                                                {{-- {{ treasures_with_Active_shifts($item->sub_treasuries_id) }}
+                                                {{$item->sub_treasuries_id}} --}}
+                                                @if (empty(treasures_with_Active_shifts($item->sub_treasuries_id)))
                                                     @can('حذف خزنة فرعية للخزنة الرئيسية')
                                                         <button class="btn btn-danger" wire:click.prevent="$dispatch('SubTreasuriesDelete',{id: {{ $item->id }}})">حذف</button>
                                                     @endcan

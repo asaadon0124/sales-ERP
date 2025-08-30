@@ -40,10 +40,16 @@ class ItemUnit extends Model
         return $this->hasMany(ItemBatch::class,'item_unit_id');
     }
 
-    public function items()
-{
-    return $this->hasMany(Item::class, 'item_unit_id', 'id'); // تأكد من اسم العمود
-}
+    public function master_items()
+    {
+        return $this->hasMany(Item::class, 'item_unit_id', 'id'); // تأكد من اسم العمود
+    }
+
+
+    public function sub_master_items()
+    {
+        return $this->hasMany(Item::class, 'sub_item_unit_id', 'id'); // تأكد من اسم العمود
+    }
 
 
 

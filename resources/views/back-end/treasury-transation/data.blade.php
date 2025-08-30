@@ -218,12 +218,12 @@
                                 @endcan
 
                                 @can('حذف حركة تحصيل')
-                                    <a class="btn btn-danger waves-effect waves-float waves-light mr-3" href="#"
+                                    {{-- <a class="btn btn-danger waves-effect waves-float waves-light mr-3" href="#"
                                         data-id="{{ $item->id }}"
                                         wire:click.prevent="$dispatch('treasuriesTransactionDelete', {id: {{ $item->id }}})"
                                         ti`le="Delete">
                                         حذف
-                                    </a>
+                                    </a> --}}
                                 @endcan
 
 
@@ -232,7 +232,7 @@
                                     المزيد
                                 </a> --}} -->
 
-                                @can('تفاصيل حركة تحصيل ')
+                                @can('تفاصيل حركة تحصيل')
                                     <a class="btn btn-warning waves-effect waves-float waves-light" title="Show"
                                         wire:navigate href="{{ route('treasuries.show', $item->id) }}"
                                         wire:click.prevent="$dispatch('treasuriesShow', {id: {{ $item->id }}})">

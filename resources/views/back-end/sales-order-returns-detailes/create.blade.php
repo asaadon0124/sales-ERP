@@ -114,7 +114,7 @@
                         <div class="col-sm-4 mb-4 {{ $store_id != '' ? '' : 'd-none' }}">
                             <div class="form-group">
                                 <label>اسم المخزن المستلم للفاتورة</label>
-                                @if (!empty($total_qty_sold) && !empty($store_id))
+                                @if (!empty($total_qty_sold) || $total_qty_sold == 0 && !empty($store_id))
                                     <input type="text" class="form-control"
                                         value="{{ $total_qty_sold }}  {{ $check_itemUnit_type->name }}" readonly>
                                 @endif

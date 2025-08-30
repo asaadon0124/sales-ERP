@@ -53,8 +53,10 @@
                             </div>
                         </td> --}}
                         <td>
+                            {{-- {{ $item->shifts->count() }} --}}
                             <div class="d-flex align-items-center">
-                                @if (empty(treasures_with_Active_shifts($item->id)))
+                                {{-- @if (empty(treasures_with_Active_shifts($item->id)) && $item->shifts->count() == 0) --}}
+                                @if ($item->canBeDeleted())
                                     @can('تعديل الخزن')
                                         <a class="btn btn-primary waves-effect waves-float waves-light" title="Edit" href="#" wire:click.prevent="$dispatch('treasuriesUpdate', {id: {{ $item->id }}})">
                                             نعديل
@@ -71,9 +73,6 @@
                                     @endcan
                                 @endif
 
-                                {{-- <a class="btn btn-warning waves-effect waves-float waves-light" title="Show" href="#" wire:click.prevent="$dispatch('treasuriesShow', {id: {{ $item->id }}})">
-                                    المزيد
-                                </a> --}}
 
                                 @can('تفاصيل الخزن')
                                     <a class="btn btn-warning waves-effect waves-float waves-light" title="Show" wire:navigate href="{{ route('treasuries.show',$item->id) }}" wire:click.prevent="$dispatch('treasuriesShow', {id: {{ $item->id }}})">
@@ -93,7 +92,7 @@
 
     </table>
     @can('حذف الخزن')
-        <p style="color: red">لا يمكن حذف الخزنة اذا كانت لا تحتوي علي خزن فرعية و ليس لديها شيفت مفعل او لم تتم مراجعته</p>
+        <p style="color: red">لا يمكن حذف الخزنة اذا كانت لا تحتوي علي خزن فرعية و ليس لديها شيفت مفعل او كان لديها شيفتات مفعلة مسبقا او لم تتم مراجعته</p>
     @endcan
     <div class=" mt-2">
         {{ $data->links() }}
